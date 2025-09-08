@@ -69,10 +69,10 @@ export function JobForm() {
   };
 
   const toggleSortType = (sortType: SortType) => {
-    if (sortTypes.includes(sortType)) {
-      setValue('sort_types', sortTypes.filter(s => s !== sortType));
+    if ((sortTypes || []).includes(sortType)) {
+      setValue('sort_types', (sortTypes || []).filter(s => s !== sortType));
     } else {
-      setValue('sort_types', [...sortTypes, sortType]);
+      setValue('sort_types', [...(sortTypes || []), sortType]);
     }
   };
 
