@@ -69,18 +69,18 @@ export function JobForm() {
   };
 
   const toggleSortType = (sortType: SortType) => {
-    if (sortTypes.includes(sortType)) {
-      setValue('sort_types', sortTypes.filter(s => s !== sortType));
+    if ((sortTypes || []).includes(sortType)) {
+      setValue('sort_types', (sortTypes || []).filter(s => s !== sortType));
     } else {
-      setValue('sort_types', [...sortTypes, sortType]);
+      setValue('sort_types', [...(sortTypes || []), sortType]);
     }
   };
 
   const toggleTimeFilter = (timeFilter: TimeFilter) => {
-    if (timeFilters.includes(timeFilter)) {
-      setValue('time_filters', timeFilters.filter(t => t !== timeFilter));
+    if ((timeFilters || []).includes(timeFilter)) {
+      setValue('time_filters', (timeFilters || []).filter(t => t !== timeFilter));
     } else {
-      setValue('time_filters', [...timeFilters, timeFilter]);
+      setValue('time_filters', [...(timeFilters || []), timeFilter]);
     }
   };
 
@@ -90,7 +90,7 @@ export function JobForm() {
       return;
     }
 
-    if (data.sort_types.length === 0) {
+    if ((data.sort_types || []).length === 0) {
       toast.error('Please select at least one sort type');
       return;
     }
@@ -175,7 +175,7 @@ export function JobForm() {
                   {Object.values(SortType).map((sortType) => (
                     <Badge
                       key={sortType}
-                      variant={sortTypes.includes(sortType) ? "default" : "outline"}
+                      variant={(sortTypes || []).includes(sortType) ? "default" : "outline"}
                       className="cursor-pointer"
                       onClick={() => toggleSortType(sortType)}
                     >
@@ -195,7 +195,7 @@ export function JobForm() {
                   {Object.values(TimeFilter).map((timeFilter) => (
                     <Badge
                       key={timeFilter}
-                      variant={timeFilters.includes(timeFilter) ? "default" : "outline"}
+                      variant={(timeFilters || []).includes(timeFilter) ? "default" : "outline"}
                       className="cursor-pointer"
                       onClick={() => toggleTimeFilter(timeFilter)}
                     >
@@ -312,7 +312,7 @@ export function JobForm() {
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {keywords.map((keyword) => (
+                    {(keywords || []).map((keyword) => (
                       <Badge key={keyword} variant="outline" className="px-2 py-1">
                         {keyword}
                         <Button

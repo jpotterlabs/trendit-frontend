@@ -52,7 +52,7 @@ export function StatsCards({ dataSummary, jobs, isLoading = false }: StatsCardsP
       value: activeJobs.toString(),
       icon: Clock,
       change: activeJobs > 0 ? `${activeJobs} running` : 'None',
-      changeType: activeJobs > 0 ? 'neutral' : 'neutral' as const,
+      changeType: 'neutral' as const,
     },
     {
       name: 'Completed Jobs',
@@ -83,8 +83,6 @@ export function StatsCards({ dataSummary, jobs, isLoading = false }: StatsCardsP
                   className={
                     stat.changeType === 'positive'
                       ? 'text-green-600 bg-green-50'
-                      : stat.changeType === 'negative'
-                      ? 'text-red-600 bg-red-50'
                       : 'text-gray-600 bg-gray-50'
                   }
                 >
