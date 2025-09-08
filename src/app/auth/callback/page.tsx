@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/auth';
 import { Loader2 } from 'lucide-react';
+import { getAuth0Audience } from '@/lib/config/auth0';
 
 export default function CallbackPage() {
   const { user, isAuthenticated, isLoading, error, getAccessTokenSilently } = useAuth0();
@@ -24,9 +25,7 @@ export default function CallbackPage() {
       if (isAuthenticated && user) {
         try {
           // Get the access token from Auth0
-          const audience = process.env.NEXT_PUBLIC_AUTH0_AUDIENCE || 
-                          process.env.AUTH0_AUDIENCE || 
-                          'https://trendit-api.com';
+          const audience = getAuth0Audience();
           
           const accessToken = await getAccessTokenSilently({
             authorizationParams: {
