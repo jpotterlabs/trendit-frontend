@@ -63,7 +63,7 @@ export default function DataBrowserPage() {
       setError(null);
       
       // Query posts or comments for the selected job
-      const filters = {
+      const filters: Record<string, any> = {
         job_ids: [selectedJob.job_id],
         limit: 100, // Load more items for browsing
         sort_by: sortBy,
