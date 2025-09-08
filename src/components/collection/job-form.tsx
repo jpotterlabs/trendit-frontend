@@ -58,14 +58,14 @@ export function JobForm() {
   };
 
   const addKeyword = () => {
-    if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
-      setValue('keywords', [...keywords, keywordInput.trim()]);
+    if (keywordInput.trim() && !(keywords || []).includes(keywordInput.trim())) {
+      setValue('keywords', [...(keywords || []), keywordInput.trim()]);
       setKeywordInput('');
     }
   };
 
   const removeKeyword = (keyword: string) => {
-    setValue('keywords', keywords.filter(k => k !== keyword));
+    setValue('keywords', (keywords || []).filter(k => k !== keyword));
   };
 
   const toggleSortType = (sortType: SortType) => {
