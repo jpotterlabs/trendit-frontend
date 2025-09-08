@@ -35,7 +35,7 @@ export function Auth0ProviderWrapper({ children }: Auth0ProviderWrapperProps) {
       clientId={clientId}
       authorizationParams={{
         redirect_uri: redirectUri,
-        audience: audience || 'https://trendit-api.com',
+        audience: audience || 'https://api.potterlabs.xyz',
         scope: "openid profile email"
       }}
       onRedirectCallback={onRedirectCallback}

@@ -26,7 +26,7 @@ export default function CallbackPage() {
           // Get the access token from Auth0
           const audience = process.env.NEXT_PUBLIC_AUTH0_AUDIENCE || 
                           process.env.AUTH0_AUDIENCE || 
-                          'https://trendit-api.com';
+                          'https://api.potterlabs.xyz';
           
           const accessToken = await getAccessTokenSilently({
             authorizationParams: {
