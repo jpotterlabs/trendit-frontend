@@ -2,6 +2,7 @@
 
 import { Auth0Provider } from '@auth0/auth0-react';
 import { useRouter } from 'next/navigation';
+import { getAuth0Audience } from '@/lib/config/auth0';
 
 interface Auth0ProviderWrapperProps {
   children: React.ReactNode;
@@ -35,7 +36,7 @@ export function Auth0ProviderWrapper({ children }: Auth0ProviderWrapperProps) {
       clientId={clientId}
       authorizationParams={{
         redirect_uri: redirectUri,
-        audience: audience || 'https://trendit-api.com',
+        audience: audience || getAuth0Audience(),
         scope: "openid profile email"
       }}
       onRedirectCallback={onRedirectCallback}
