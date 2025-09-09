@@ -4,9 +4,10 @@
 export const config = {
   // API Configuration
   api: {
-    baseUrl: process.env.NODE_ENV === 'development' 
-      ? process.env.NEXT_PUBLIC_API_URL_DEV || 'http://localhost:8000'
-      : process.env.NEXT_PUBLIC_API_URL_PROD || 'https://api.trendit.example.com',
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || 
+      (process.env.NODE_ENV === 'development' 
+        ? process.env.NEXT_PUBLIC_API_URL_DEV || 'http://localhost:8000'
+        : process.env.NEXT_PUBLIC_API_URL_PROD || 'https://api.potterlabs.xyz'),
     timeout: 10000, // 10 seconds
   },
   
