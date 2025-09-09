@@ -39,7 +39,7 @@ export function DashboardLayout({ children, title, description, headerActions }:
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100 dark:bg-background">
+    <div className="h-screen flex overflow-hidden bg-background">
       <DashboardSidebar />
       
       <div className="flex flex-col w-0 flex-1 overflow-hidden md:ml-64">
@@ -47,10 +47,12 @@ export function DashboardLayout({ children, title, description, headerActions }:
           {headerActions}
         </DashboardHeader>
         
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              {children}
+        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-gradient-to-br from-background via-background to-muted/30">
+          <div className="min-h-full">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
+              <div className="animate-fade-in">
+                {children}
+              </div>
             </div>
           </div>
         </main>

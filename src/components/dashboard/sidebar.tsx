@@ -30,19 +30,72 @@ import {
   Key,
   Search,
   Layout,
+  TrendingUp,
+  Activity,
+  Layers,
+  Brain,
+  Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const navigation = [
-  { name: 'Overview', href: '/dashboard', icon: Home },
-  { name: 'Collection Jobs', href: '/dashboard/jobs', icon: Database },
-  { name: 'Scenarios', href: '/dashboard/scenarios', icon: Layout },
-  { name: 'Data Browser', href: '/dashboard/data', icon: Search },
-  { name: 'Query Data', href: '/dashboard/query', icon: Search },
-  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-  { name: 'Export Data', href: '/dashboard/export', icon: Download },
-  { name: 'Sentiment Analysis', href: '/dashboard/sentiment', icon: Zap },
+  { 
+    name: 'Overview', 
+    href: '/dashboard', 
+    icon: Home,
+    description: 'Dashboard insights',
+    gradient: 'from-sapphire-500 to-violet-500'
+  },
+  { 
+    name: 'Collection Jobs', 
+    href: '/dashboard/jobs', 
+    icon: Database,
+    description: 'Data collection tasks',
+    gradient: 'from-emerald-500 to-teal-500'
+  },
+  { 
+    name: 'Scenarios', 
+    href: '/dashboard/scenarios', 
+    icon: Layers,
+    description: 'Analysis scenarios',
+    gradient: 'from-violet-500 to-purple-500'
+  },
+  { 
+    name: 'Data Browser', 
+    href: '/dashboard/data', 
+    icon: Filter,
+    description: 'Explore datasets',
+    gradient: 'from-amber-500 to-orange-500'
+  },
+  { 
+    name: 'Query Builder', 
+    href: '/dashboard/query', 
+    icon: Search,
+    description: 'Custom queries',
+    gradient: 'from-rose-500 to-pink-500'
+  },
+  { 
+    name: 'Analytics', 
+    href: '/dashboard/analytics', 
+    icon: TrendingUp,
+    description: 'Data insights',
+    gradient: 'from-cyan-500 to-blue-500'
+  },
+  { 
+    name: 'Export Center', 
+    href: '/dashboard/export', 
+    icon: Download,
+    description: 'Data export tools',
+    gradient: 'from-indigo-500 to-purple-500'
+  },
+  { 
+    name: 'AI Insights', 
+    href: '/dashboard/sentiment', 
+    icon: Brain,
+    description: 'Sentiment analysis',
+    gradient: 'from-emerald-500 to-cyan-500'
+  },
 ];
 
 export function DashboardSidebar() {
@@ -67,112 +120,229 @@ export function DashboardSidebar() {
   };
 
   const Sidebar = ({ className = '' }: { className?: string }) => (
-    <div className={cn('flex h-full flex-col overflow-y-auto border-r bg-background', className)}>
-      {/* Logo */}
-      <div className="flex h-16 shrink-0 items-center px-6">
-        <div className="flex items-center flex-1">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-orange-500 to-blue-500 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">T</span>
+    <div className={cn('flex h-full flex-col overflow-y-auto bg-sidebar border-r border-sidebar-border shadow-strong', className)}>
+      {/* Revolutionary Logo Header */}
+      <div className="flex h-20 shrink-0 items-center justify-between px-6 border-b border-sidebar-border/50">
+        <div className="flex items-center space-x-3">
+          <div className="relative group">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sapphire-500 via-violet-500 to-emerald-500 flex items-center justify-center shadow-glow-sapphire transition-all duration-300 group-hover:scale-110">
+              <span className="text-white font-bold text-lg">T</span>
+            </div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-sapphire-500 via-violet-500 to-emerald-500 opacity-20 blur-md group-hover:opacity-40 transition-opacity duration-300" />
           </div>
-          <span className="ml-3 text-xl font-bold text-foreground">Trendit</span>
+          <div>
+            <h1 className="text-xl font-bold text-sidebar-foreground tracking-tight">Trendit</h1>
+            <p className="text-xs text-sidebar-foreground/60 font-medium">Analytics Platform</p>
+          </div>
         </div>
         <ThemeToggle />
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                isActive
-                  ? 'bg-accent border-r-2 border-primary text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              )}
-            >
-              <item.icon
-                className={cn(
-                  'mr-3 h-5 w-5 flex-shrink-0',
-                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-accent-foreground'
-                )}
-              />
-              {item.name}
-            </Link>
-          );
-        })}
+      {/* Premium Navigation */}
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        <div className="mb-6">
+          <h2 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-3 px-3">
+            Navigation
+          </h2>
+          <div className="space-y-1 stagger">
+            {navigation.map((item, index) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    'group relative flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-300 hover:scale-[1.02]',
+                    isActive
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-medium border border-sidebar-primary/20'
+                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                  )}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {/* Active indicator */}
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-sapphire-500 to-violet-500 rounded-r-full" />
+                  )}
+                  
+                  {/* Icon with gradient background */}
+                  <div className={cn(
+                    'relative flex items-center justify-center w-8 h-8 rounded-lg mr-3 transition-all duration-300',
+                    isActive 
+                      ? `bg-gradient-to-br ${item.gradient} shadow-glow-sapphire` 
+                      : 'bg-sidebar-foreground/5 group-hover:bg-sidebar-accent'
+                  )}>
+                    <item.icon
+                      className={cn(
+                        'h-4 w-4 transition-all duration-300',
+                        isActive 
+                          ? 'text-white' 
+                          : 'text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground'
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{item.name}</span>
+                      {/* Activity indicator for active items */}
+                      {isActive && (
+                        <div className="flex items-center space-x-1">
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse-soft" />
+                          <Activity className="h-3 w-3 text-sidebar-accent-foreground/60" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-sidebar-foreground/50 mt-0.5 truncate">
+                      {item.description}
+                    </p>
+                  </div>
+                  
+                  {/* Hover effect overlay */}
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-sidebar-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
-      {/* User section */}
-      <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
-        <div className="space-y-3">
-          {/* Subscription badge */}
+      {/* Premium User Section */}
+      <div className="flex-shrink-0 border-t border-sidebar-border/50 p-4 bg-gradient-to-r from-sidebar/50 to-sidebar">
+        <div className="space-y-4">
+          {/* Enhanced Subscription Badge */}
           {subscription && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Plan</span>
-              <Badge
-                variant="secondary"
-                className={cn('text-xs', getTierColor(subscription.tier))}
-              >
-                {subscription.tier.toUpperCase()}
-              </Badge>
+            <div className="bg-sidebar-accent/20 rounded-lg p-3 border border-sidebar-border/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wide">Current Plan</span>
+                <Badge
+                  className={cn(
+                    'text-xs font-bold px-2.5 py-1 rounded-full border-0',
+                    getTierColor(subscription.tier),
+                    'shadow-soft'
+                  )}
+                >
+                  {subscription.tier.toUpperCase()}
+                </Badge>
+              </div>
+              
+              {/* Usage indicator */}
+              {subscription.usage_percentage && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-sidebar-foreground/60">Usage</span>
+                    <span className="text-sidebar-foreground/80 font-medium">
+                      {Math.round(subscription.usage_percentage.api_calls || 0)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-sidebar-foreground/10 rounded-full h-1.5">
+                    <div
+                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-1.5 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(subscription.usage_percentage.api_calls || 0, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* User dropdown */}
+          {/* Premium User Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start p-0 h-auto">
-                <div className="flex items-center w-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={`https://avatar.vercel.sh/${user?.email}`} />
-                    <AvatarFallback>
-                      {user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="ml-3 text-left">
-                    <p className="text-sm font-medium text-foreground truncate">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start p-3 h-auto rounded-xl hover:bg-sidebar-accent/30 transition-all duration-300 group"
+              >
+                <div className="flex items-center w-full space-x-3">
+                  <div className="relative">
+                    <Avatar className="h-10 w-10 border-2 border-sidebar-primary/20 shadow-soft">
+                      <AvatarImage src={`https://avatar.vercel.sh/${user?.email}`} />
+                      <AvatarFallback className="bg-gradient-to-br from-sapphire-500 to-violet-500 text-white font-semibold">
+                        {user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-sidebar rounded-full animate-pulse-soft" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-sm font-semibold text-sidebar-foreground truncate group-hover:text-sidebar-accent-foreground transition-colors">
                       {user?.username || 'User'}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    <p className="text-xs text-sidebar-foreground/60 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
+                  <div className="text-sidebar-foreground/40 group-hover:text-sidebar-accent-foreground transition-colors">
+                    <Settings className="h-4 w-4" />
                   </div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
+            <DropdownMenuContent align="start" className="w-64 shadow-strong border border-border bg-card backdrop-blur-sm">
+              <DropdownMenuLabel className="text-foreground font-semibold px-2 py-1.5">
+                Account Settings
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-border" />
+              
+              <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent p-0">
+                <Link href="/dashboard/profile" className="flex items-center w-full px-2 py-2 text-foreground hover:text-accent-foreground">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sapphire-500 to-violet-500 flex items-center justify-center mr-3 shadow-sm">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm">Profile</div>
+                    <p className="text-xs text-muted-foreground truncate">Manage your profile</p>
+                  </div>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/api-keys">
-                  <Key className="mr-2 h-4 w-4" />
-                  API Keys
+              
+              <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent p-0">
+                <Link href="/dashboard/api-keys" className="flex items-center w-full px-2 py-2 text-foreground hover:text-accent-foreground">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mr-3 shadow-sm">
+                    <Key className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm">API Keys</div>
+                    <p className="text-xs text-muted-foreground truncate">Manage integrations</p>
+                  </div>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/billing">
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Billing
+              
+              <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent p-0">
+                <Link href="/dashboard/billing" className="flex items-center w-full px-2 py-2 text-foreground hover:text-accent-foreground">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mr-3 shadow-sm">
+                    <CreditCard className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm">Billing</div>
+                    <p className="text-xs text-muted-foreground truncate">Subscription & usage</p>
+                  </div>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
+              
+              <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent p-0">
+                <Link href="/dashboard/settings" className="flex items-center w-full px-2 py-2 text-foreground hover:text-accent-foreground">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center mr-3 shadow-sm">
+                    <Settings className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm">Settings</div>
+                    <p className="text-xs text-muted-foreground truncate">Preferences & config</p>
+                  </div>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
+              
+              <DropdownMenuSeparator className="bg-border" />
+              
+              <DropdownMenuItem 
+                onClick={handleLogout} 
+                className="cursor-pointer text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 px-2 py-2"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center mr-3 shadow-sm">
+                  <LogOut className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">Sign out</div>
+                  <p className="text-xs text-muted-foreground truncate">End your session</p>
+                </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

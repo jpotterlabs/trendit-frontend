@@ -38,6 +38,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = window.document.documentElement;
     const body = window.document.body;
     
+    console.log('🎨 Applying theme classes:', theme);
+    console.log('🎨 Root classes before:', Array.from(root.classList));
+    
     // Remove both theme classes first
     root.classList.remove('light', 'dark');
     body.classList.remove('light', 'dark');
@@ -45,6 +48,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Add the current theme class
     root.classList.add(theme);
     body.classList.add(theme);
+    
+    console.log('🎨 Root classes after:', Array.from(root.classList));
     
     // Force update CSS custom properties
     if (theme === 'dark') {
@@ -63,7 +68,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme, mounted]);
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    console.log('🎨 Theme toggle:', theme, '→', newTheme);
+    setTheme(newTheme);
   };
 
   const value = {
