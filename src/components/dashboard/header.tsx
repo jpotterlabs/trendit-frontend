@@ -22,7 +22,7 @@ export function DashboardHeader({ title, description, children }: DashboardHeade
   };
 
   return (
-    <div className="border-b border-gray-200 dark:border-border bg-white dark:bg-card px-4 py-4 sm:px-6 lg:px-8">
+    <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold leading-7 text-gray-900 dark:text-foreground sm:truncate">

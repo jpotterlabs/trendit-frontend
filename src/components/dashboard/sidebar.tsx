@@ -107,7 +107,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* User section */}
-      <div className="flex-shrink-0 border-t border-border p-4">
+      <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
         <div className="space-y-3">
           {/* Subscription badge */}
           {subscription && (
@@ -214,7 +214,7 @@ export function DashboardSidebar() {
       <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-background shadow md:hidden">
         <Button
           variant="ghost"
-          className="px-4 border-r border-border text-muted-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring md:hidden"
+          className="px-4 border-r border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:hidden"
           onClick={() => setSidebarOpen(true)}
         >
           <Menu className="h-6 w-6" />
