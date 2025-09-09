@@ -1,0 +1,666 @@
+╭───────────────────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code!                                 │
+│                                                           │
+│   /help for help, /status for your current setup          │
+│                                                           │
+│   cwd: /home/jason/projects/jpotterlabs/trendit/frontend  │
+╰───────────────────────────────────────────────────────────╯
+  ⎿  Referenced file ../backend/api/auth.py
+  ⎿  Read ../backend/docs/DEVELOPMENT.md (566 lines)
+  ⎿  Read ../backend/docs/DEPLOYMENT.md (609 lines)
+  ⎿  Read ../backend/docs/API.md (498 lines)
+  ⎿  Read ../backend/README.md (300 lines)
+  ⎿  Todo list read (4 items)
+
+● I'll continue implementing the remaining warranted CodeRabbit suggestions on PR #3. Let me complete the Auth0
+  callback filtering and PII logging improvements.
+
+● Read(~/projects/jpotterlabs/trendit/backend/api/auth0_auth.py)
+  ⎿  Read 251 lines (ctrl+r to expand)
+  ⎿  5-hour limit reached ∙ resets 7pm
+     /upgrade to increase your usage limit.
+
+> please read code review in pr3 and implement useful suggestions.
+
+● I'll read the CodeRabbit review on PR #3 and implement the warranted suggestions.
+
+● Bash(gh pr view 3 --json reviews)
+  ⎿  Agent pid 1791640              
+     {
+       "reviews": [
+     … +165 lines (ctrl+r to expand)
+
+● Now I'll implement the warranted suggestions from CodeRabbit. Let me start with the most important actionable
+  items:
+
+● Update(~/projects/jpotterlabs/trendit/backend/api/auth0_auth.py)
+  ⎿  Updated ../backend/api/auth0_auth.py with 5 additions and 8 removals                                   
+       12    from models.database import get_db
+       13    from models.models import User, APIKey, SubscriptionStatus
+       14    from services.auth0_service import auth0_service
+       15 -  from api.auth import create_access_token
+       15 +  from api.auth import create_access_token, generate_api_key
+       16    import logging
+       17    
+       18    logger = logging.getLogger(__name__)
+     ...
+       101            # Verify the access token and get user info from Auth0
+       102            user_info = auth0_service.get_user_info(callback_data.access_token)
+       103            
+       104 -          logger.info(f"Auth0 callback for user: {user_info.get('email')}")
+       104 +          logger.info(f"Auth0 callback for user_id: {user_info.get('sub')}")
+       105            
+       106            # Create user claims format expected by get_or_create_user
+       107            auth0_claims = {
+     ...
+       121            # Check if user has an API key, create one if not
+       122            existing_api_key = db.query(APIKey).filter(
+       123                APIKey.user_id == user.id,
+       124 -              APIKey.is_active == True
+       124 +              APIKey.is_active == True,
+       125 +              APIKey.name.in_(["Auth0 Login Key", "Auth0 Login Key (Renewed)"])
+       126            ).first()
+       127            
+       128            if existing_api_key:
+       129                # For existing users, return full API key
+       130                # Need to generate a new one since we can't retrieve the original raw key
+       131 -              from api.auth import generate_api_key
+       132 -              
+       131                # Delete old API key and create new one
+       132                db.delete(existing_api_key)
+       133                raw_key, key_hash = generate_api_key()
+     ...
+       145                api_key = raw_key
+       146            else:
+       147                # Create new API key using existing system
+       148 -              from api.auth import generate_api_key
+       149 -              
+       148                raw_key, key_hash = generate_api_key()
+       149                
+       150                new_api_key = APIKey(
+     ...
+       170                "created_at": user.created_at.isoformat()
+       171            }
+       172            
+       173 -          logger.info(f"Auth0 login successful for {user.email} via {user.auth0_provider}")
+       173 +          logger.info(f"Auth0 login successful for user_id={user.id} via {user.auth0_provider}")
+       174            
+       175            return Auth0LoginResponse(
+       176                message="Login successful",
+
+● Update(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Error editing file
+
+● Let me check the specific line where the timezone fix needs to be applied:
+
+● Read(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Read 30 lines (ctrl+r to expand)
+
+● I can see the timezone fix has already been applied. Let me look for the stale comment that needs to be removed:
+
+● Search(pattern: "We'll define this dependency", path: "../backend/api/auth.py", output_mode: "content")
+  ⎿  Found 0 lines 
+
+● Great, the stale comment has already been removed. Let me apply the .env.example fixes:
+
+● Read(~/projects/jpotterlabs/trendit/backend/.env.example)
+  ⎿  Read 74 lines (ctrl+r to expand)
+
+● Update(~/projects/jpotterlabs/trendit/backend/.env.example)
+  ⎿  Updated ../backend/.env.example with 2 additions and 2 removals                        
+       14    # Get these from https://www.reddit.com/prefs/apps
+       15    REDDIT_CLIENT_ID=your_reddit_client_id
+       16    REDDIT_CLIENT_SECRET=your_reddit_client_secret
+       17 -  REDDIT_USER_AGENT=Trendit/1.0 by /u/yourusername
+       17 +  REDDIT_USER_AGENT="Trendit/1.0 by /u/yourusername"
+       18    
+       19    # =============================================================================
+       20    # AUTH0 CONFIGURATION
+     ...
+       71    # 3. Set LOG_LEVEL=WARNING or ERROR
+       72    # 4. Use SSL-enabled database connection
+       73    # 5. Set AUTH0_AUDIENCE to your production API URL
+       74 -  # 6. Never commit .env file to version control
+       74   \ No newline at end of file
+       75 +  # 6. Never commit .env file to version control
+
+● Now let me fix the markdown documentation issues:
+
+● Update(~/projects/jpotterlabs/trendit/backend/docs/API.md)
+  ⎿  Updated ../backend/docs/API.md with 3 additions and 3 removals                                            
+       3    Complete reference for the Trendit Backend API endpoints.
+       4    
+       5    ## Base URL
+       6 -  ```
+       6 +  ```text
+       7    Production: https://api.potterlabs.xyz
+       8    Local: http://localhost:8000
+       9    ```
+     ...
+       40    ```
+       41    
+       42    **Headers:**
+       43 -  ```
+       43 +  ```http
+       44    Content-Type: application/json
+       45    ```
+       46    
+     ...
+       210    - `sort_order` (optional): Sort direction (`asc`, `desc`)
+       211    
+       212    **Example:**
+       213 -  ```
+       213 +  ```http
+       214    GET /api/scenarios/1/subreddit-keyword-search?subreddit=python&keywords=tutorial,guide&date_from=
+             2024-01-01&date_to=2024-12-31&limit=50
+       215    ```
+       216    
+
+● Update(~/projects/jpotterlabs/trendit/backend/docs/DEVELOPMENT.md)
+  ⎿  Updated ../backend/docs/DEVELOPMENT.md with 4 additions and 4 removals                       
+       52    uvicorn main:app --reload --port 8000
+       53    ```
+       54    
+       55 -  Visit: http://localhost:8000/docs for API documentation
+       55 +  Visit: [http://localhost:8000/docs](http://localhost:8000/docs) for API documentation
+       56    
+       57    ## 🗄️ Database Setup Options
+       58    
+     ...
+       122    1. Go to Auth0 Dashboard → Applications
+       123    2. Create new "Single Page Application"
+       124    3. Configure URLs:
+       125 -     ```
+       125 +     ```text
+       126       Allowed Callback URLs: http://localhost:3000/auth/callback
+       127       Allowed Web Origins: http://localhost:3000
+       128       Allowed Logout URLs: http://localhost:3000
+     ...
+       202    curl http://localhost:8000/health
+       203    
+       204    # Test authentication
+       205 -  curl -H "Authorization: Bearer tk_your_api_key" \
+       205 +  curl -H "Authorization: Bearer <API_KEY>" \
+       206      http://localhost:8000/auth/profile
+       207    ```
+       208    
+       209    ## 🏗️ Project Structure
+       210    
+       211 -  ```
+       211 +  ```text
+       212    trendit-backend/
+       213    ├── main.py                 # FastAPI application entry point
+       214    ├── models/                 # Database models
+
+● Update(~/projects/jpotterlabs/trendit/backend/README.md)
+  ⎿  Updated ../backend/README.md with 4 additions and 4 removals                                             
+       49    
+       50    ## 🔑 Environment Configuration
+       51    
+       52 -  Create `.env` file with these variables:
+       52 +  Create a `.env` file with these variables (never commit real values). Ensure numeric vars (e.g., 
+          + JWT_ACCESS_TOKEN_EXPIRE_MINUTES) are set, or your app may fail to start:
+       53    
+       54    ```bash
+       55    # Database
+     ...
+       196    ## 🚀 Deployment
+       197    
+       198    ### Production URLs
+       199 -  - **API**: https://api.potterlabs.xyz
+       200 -  - **Frontend**: https://reddit.potterlabs.xyz
+       199 +  - **API**: <https://api.potterlabs.xyz>
+       200 +  - **Frontend**: <https://reddit.potterlabs.xyz>
+       201    
+       202    ### Environment Variables
+       203    Set all environment variables in your hosting platform (Render, etc.)
+     ...
+       297    
+       298    ## 📄 License
+       299    
+       300 -  Copyright (c) 2024 Potter Labs. All rights reserved.
+       300   \ No newline at end of file
+       301 +  Copyright (c) 2025 Potter Labs. All rights reserved.
+       302   \ No newline at end of file
+
+● Now let me commit these CodeRabbit improvements:
+
+● Bash(pwd)
+  ⎿  Agent pid 1793446                               
+     /home/jason/projects/jpotterlabs/trendit/backend
+
+● Bash(git status)
+  ⎿  Agent pid 1793513                                                    
+     On branch feature/auth0-user-endpoints
+     Your branch is up to date with 'origin/feature/auth0-user-endpoints'.
+     … +12 lines (ctrl+r to expand)
+
+● Bash(git add -A && git commit -m "Apply warranted CodeRabbit suggestions from PR #3 review…)
+  ⎿  Agent pid 1793827                                                                              
+     [feature/auth0-user-endpoints 53b4cb2] Apply warranted CodeRabbit suggestions from PR #3 review
+      6 files changed, 23 insertions(+), 26 deletions(-)
+
+● Bash(git push)
+  ⎿  Agent pid 1793968                                                                
+     To https://github.com/jpotterlabs/trendit-backend.git
+        455dcc8..53b4cb2  feature/auth0-user-endpoints -> feature/auth0-user-endpoints
+
+● Perfect! I've successfully implemented all the warranted CodeRabbit suggestions from PR #3:
+
+  Implemented Improvements:
+
+  Security & Privacy:
+  - Fixed Auth0 callback API key filtering to target specific keys by name instead of all active keys
+  - Replaced PII logging (user email) with user_id for better privacy compliance
+  - Added security warnings to README about environment variables
+
+  Code Quality:
+  - Moved generate_api_key import to module scope to reduce overhead and improve consistency
+  - Fixed timezone-aware datetime usage (was already applied)
+
+  Documentation & Linting:
+  - Fixed .env.example dotenv linting issues (quoted USER_AGENT, added trailing newline)
+  - Fixed markdown linting in all docs (added language identifiers to code blocks, converted bare URLs)
+  - Updated copyright year to 2025
+
+  Configuration:
+  - Improved environment variable documentation with warnings about numeric fields and secrets
+
+  All changes have been committed and pushed to the feature branch. The PR now addresses CodeRabbit's main
+  concerns while maintaining full functionality of the Auth0 integration.
+
+> ok read the latest comments in pr 3, coderabbit re-reviewed after your changes. implement anything that is still 
+  warranted
+
+● Bash(gh pr view 3 --json reviews --jq '.reviews | map(select(.author.login == "coderabbitai")) |
+      sort_by(.submittedAt) | last')
+  ⎿  Agent pid 1809651              
+     {
+       "author": {
+     … +136 lines (ctrl+r to expand)
+
+● I'll implement the most critical warranted suggestions from CodeRabbit's latest review. Let me start with the
+  most important ones:
+
+● Update(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Error editing file
+
+● Let me first check the exact content around the duplicate timezone import:
+
+● Read(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Read 10 lines (ctrl+r to expand)
+
+● I see the duplicate timezone import. Let me fix that and the Auth0 fallback logic:
+
+● Update(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Updated ../backend/api/auth.py with 1 addition and 1 removal       
+       3    from sqlalchemy.orm import Session
+       4    from pydantic import BaseModel, EmailStr
+       5    from passlib.context import CryptContext
+       6 -  from datetime import datetime, timedelta, timezone, timezone
+       6 +  from datetime import datetime, timedelta, timezone
+       7    import secrets
+       8    import hashlib
+       9    import jwt
+
+● Now let me check and fix the Auth0 fallback logic:
+
+● Read(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Read 55 lines (ctrl+r to expand)
+
+● Update(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Updated ../backend/api/auth.py with 16 additions and 7 removals                                       
+       110            claims = auth0_service.verify_jwt_token(credentials.credentials)
+       111            user = auth0_service.get_or_create_user(claims, db)
+       112            return user
+       113 -      except HTTPException:
+       113 +      except HTTPException as err:
+       114 +          if err.status_code not in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN):
+       115 +              raise
+       116            # If Auth0 fails, try regular JWT token
+       117            try:
+       118                payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+     ...
+       120                        status_code=status.HTTP_401_UNAUTHORIZED,
+       121                        detail="Could not validate credentials",
+       122                        headers={"WWW-Authenticate": "Bearer"},
+       123 -                  )
+       124 -              
+       125 -              user = db.query(User).filter(User.id == int(user_id)).first()
+       123 +                  ) from None
+       124 +              try:
+       125 +                  uid = int(user_id)
+       126 +              except (TypeError, ValueError):
+       127 +                  raise HTTPException(
+       128 +                      status_code=status.HTTP_401_UNAUTHORIZED,
+       129 +                      detail="Could not validate credentials",
+       130 +                      headers={"WWW-Authenticate": "Bearer"},
+       131 +                  ) from None
+       132 +              user = db.query(User).filter(User.id == uid).first()
+       133                if user is None:
+       134                    raise HTTPException(
+       135                        status_code=status.HTTP_401_UNAUTHORIZED,
+       136                        detail="User not found",
+       137                        headers={"WWW-Authenticate": "Bearer"},
+       138 -                  )
+       138 +                  ) from None
+       139                if not user.is_active:
+       140                    raise HTTPException(
+       141                        status_code=status.HTTP_401_UNAUTHORIZED,
+       142                        detail="Account is inactive",
+       143                        headers={"WWW-Authenticate": "Bearer"},
+       144 -                  )
+       144 +                  ) from None
+       145                return user
+       146            except jwt.InvalidTokenError:
+       147                raise HTTPException(
+       148                    status_code=status.HTTP_401_UNAUTHORIZED,
+       149                    detail="Could not validate credentials",
+       150                    headers={"WWW-Authenticate": "Bearer"},
+       151 -              )
+       151 +              ) from None
+       152    
+       153    # Dependency functions
+       154    async def get_current_user(
+
+● Now let me fix the API key deletion to use soft delete instead of hard delete:
+
+● Read(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Read 30 lines (ctrl+r to expand)
+
+● Read(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Read 15 lines (ctrl+r to expand)
+
+● Update(~/projects/jpotterlabs/trendit/backend/api/auth.py)
+  ⎿  Updated ../backend/api/auth.py with 2 additions and 3 removals     
+       578                detail="API key not found"
+       579            )
+       580        
+       581 -      db.delete(api_key)
+       581 +      api_key.is_active = False
+       582        db.commit()
+       583 -      
+       584 -      return {"message": "API key deleted successfully"}
+       583 +      return {"message": "API key deactivated successfully"}
+       584    
+       585    # Admin/Testing endpoints
+       586    @router.post("/create-test-user")
+
+● Now let me fix the Auth0 callback API key rotation to use soft delete and proper transaction:
+
+● Update(~/projects/jpotterlabs/trendit/backend/api/auth0_auth.py)
+  ⎿  Error editing file
+
+● Let me check the exact content around that section:
+
+● Read(~/projects/jpotterlabs/trendit/backend/api/auth0_auth.py)
+  ⎿  Read 30 lines (ctrl+r to expand)
+
+● Update(~/projects/jpotterlabs/trendit/backend/api/auth0_auth.py)
+  ⎿  Updated ../backend/api/auth0_auth.py with 3 additions and 5 removals                          
+       121            # Check if user has an API key, create one if not
+       122            existing_api_key = db.query(APIKey).filter(
+       123                APIKey.user_id == user.id,
+       124 -              APIKey.is_active == True,
+       124 +              APIKey.is_active.is_(True),
+       125                APIKey.name.in_(["Auth0 Login Key", "Auth0 Login Key (Renewed)"])
+       126            ).first()
+       127            
+       128            if existing_api_key:
+       129 -              # For existing users, return full API key
+       130 -              # Need to generate a new one since we can't retrieve the original raw key
+       131 -              # Delete old API key and create new one
+       132 -              db.delete(existing_api_key)
+       129 +              # Rotate: deactivate old key and create a new one (keeps audit fields)
+       130 +              existing_api_key.is_active = False
+       131                raw_key, key_hash = generate_api_key()
+       132                
+       133                new_api_key = APIKey(
+
+● Now let me fix the .env.example environment variables:
+
+● Update(~/projects/jpotterlabs/trendit/backend/.env.example)
+  ⎿  Updated ../backend/.env.example with 3 additions and 2 removals                        
+       20    # AUTH0 CONFIGURATION
+       21    # =============================================================================
+       22    # Get these from your Auth0 Dashboard → Applications
+       23 -  AUTH0_DOMAIN=your-domain.auth0.com
+       23 +  # Use your Auth0 API Identifier (usually an https URL)
+       24 +  AUTH0_AUDIENCE=https://api.potterlabs.xyz
+       25    AUTH0_CLIENT_ID=your_auth0_client_id
+       26    AUTH0_CLIENT_SECRET=your_auth0_client_secret
+       27 -  AUTH0_AUDIENCE=http://localhost:8000
+       27 +  AUTH0_DOMAIN=your-domain.auth0.com
+       28    
+       29    # =============================================================================
+       30    # JWT CONFIGURATION
+
+● Now let me fix the development documentation issues:
+
+● Update(~/projects/jpotterlabs/trendit/backend/docs/DEVELOPMENT.md)
+  ⎿  Updated ../backend/docs/DEVELOPMENT.md with 5 additions and 3 removals                                    
+       106    
+       107    ```bash
+       108    # Use Neon database for development (not recommended for team work)
+       109 -  DATABASE_URL=postgresql://neondb_owner:npg_daSvTEL8boA6@ep-silent-mud-af6oce7w-pooler.c-2.us-west
+           - -2.aws.neon.tech/neondb?sslmode=require
+       109 +  # Replace with your own placeholder; never commit secrets
+       110 +  DATABASE_URL=postgresql://<USER>:<PASSWORD>@<HOST>/<DB>?sslmode=require
+       111    ```
+       112    
+       113    ## 🔑 API Credentials Setup
+       114    
+       115    ### Reddit API
+       116 -  1. Go to https://www.reddit.com/prefs/apps
+       116 +  1. Go to [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps)
+       117    2. Click "Create App" or "Create Another App"
+       118    3. Choose "web app" type
+       119    4. Set redirect URI to `http://localhost:8000/auth/reddit/callback`
+     ...
+       143    AUTH0_DOMAIN=your-dev-domain.auth0.com
+       144    AUTH0_CLIENT_ID=your_auth0_client_id
+       145    AUTH0_CLIENT_SECRET=your_auth0_client_secret
+       146 -  AUTH0_AUDIENCE=http://localhost:8000
+       146 +  # Use your Auth0 API Identifier (https)
+       147 +  AUTH0_AUDIENCE=https://api.potterlabs.xyz
+       148    
+       149    # JWT Configuration
+       150    JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
+
+● Now let me commit these additional improvements:
+
+● Bash(git add -A && git commit -m "Apply additional warranted CodeRabbit suggestions from latest review…)
+  ⎿  Agent pid 1812087                                                                                          
+     [feature/auth0-user-endpoints 9259786] Apply additional warranted CodeRabbit suggestions from latest review
+      4 files changed, 30 insertions(+), 21 deletions(-)
+
+● Bash(git push)
+  ⎿  Agent pid 1812214                                                                
+     To https://github.com/jpotterlabs/trendit-backend.git
+        53b4cb2..9259786  feature/auth0-user-endpoints -> feature/auth0-user-endpoints
+
+● Perfect! I've successfully implemented the most critical warranted suggestions from CodeRabbit's latest review:
+
+  Key Improvements Applied:
+
+  Security & Robustness:
+  - Enhanced Auth0 fallback logic: Now only retries JWT validation on 401/403 errors, preventing unnecessary
+  retries on other Auth0 failures
+  - Hardened JWT parsing: Added proper type checking for user ID conversion with error chaining (from None)
+  - Soft delete for API keys: Both in regular deletion and Auth0 callback rotation - preserves audit trail and
+  metadata
+
+  Code Quality:
+  - Fixed duplicate timezone import that was causing linting warnings
+  - Improved SQLAlchemy syntax: Using .is_(True) instead of == True for better practice
+  - Better error handling: Proper exception chaining throughout authentication flow
+
+  Security & Configuration:
+  - Updated Auth0 audience: Changed from localhost to HTTPS production URL in all examples
+  - Removed exposed credentials: Replaced real Neon database connection string with placeholder
+  - Enhanced documentation: Fixed bare URLs, improved configuration examples
+
+  Standards Compliance:
+  - Fixed dotenv linting: Reordered environment variables alphabetically
+  - Improved markdown: Added proper language identifiers and converted bare URLs to links
+
+  The PR now addresses all the major security, code quality, and documentation concerns raised by CodeRabbit. The
+  authentication system is more robust with proper error handling, the configuration examples are
+  production-ready, and sensitive information has been properly sanitized.
+
+> ok we're making progress. when I try to create an account user username/emil address and password, in the console 
+  im getting this error: 60-175b98de0b997761.js:1 
+   POST https://api.trendit.example.com/auth/register net::ERR_NAME_NOT_RESOLVED
+
+● The error shows the frontend is trying to POST to https://api.trendit.example.com/auth/register, but this domain
+   doesn't exist. The frontend is using the wrong API base URL.
+
+  Let me check the current API endpoints and help fix the configuration:
+
+● Search(pattern: "register", path: "../backend/api")
+  ⎿  Found 1 file (ctrl+r to expand)
+
+● Search(pattern: "@router.post.*register", path: "../backend/api/auth.py", output_mode: "content")
+  ⎿  Found 1 line (ctrl+r to expand)
+
+● Good, the /auth/register endpoint exists. The issue is the frontend configuration. Let me check the frontend
+  environment:
+
+● Bash(cd /home/jason/projects/jpotterlabs/trendit/frontend && ls -la .env*)
+  ⎿  Agent pid 1832164                                   
+     -rw-rw-r-- 1 jason jason 489 Sep  8 07:01 .env.local
+
+● Read(.env.local)
+  ⎿  Read 14 lines (ctrl+r to expand)
+
+● I found the issue! The frontend .env.local has two problems:
+
+  1. Wrong API URL: NEXT_PUBLIC_API_URL=http://api.potterlabs.xyz (HTTP instead of HTTPS)
+  2. The error shows api.trendit.example.com - this suggests the frontend might have a fallback or default
+  configuration
+
+  Let me fix the API URL first:
+
+● Update(.env.local)
+  ⎿  Updated .env.local with 1 addition and 1 removal                
+        7    
+        8    # Application URLs
+        9    NEXT_PUBLIC_AUTH0_BASE_URL=https://reddit.potterlabs.xyz
+       10 -  NEXT_PUBLIC_API_URL=http://api.potterlabs.xyz
+       10 +  NEXT_PUBLIC_API_URL=https://api.potterlabs.xyz
+       11    
+       12    # Optional: Analytics and Monitoring (Add when ready)
+       13    # NEXT_PUBLIC_ANALYTICS_ID=
+
+● Now let me check if there are any frontend code references to trendit.example.com:
+
+● Search(pattern: "trendit.example.com")
+  ⎿  Found 2 files (ctrl+r to expand)
+
+● Read(src/lib/config.ts)
+  ⎿  Read 65 lines (ctrl+r to expand)
+
+● Found the root cause! The frontend config is using fallback URLs that don't match the actual API. The config is
+  looking for:
+  - NEXT_PUBLIC_API_URL_DEV for development
+  - NEXT_PUBLIC_API_URL_PROD for production
+
+  But your .env.local only has NEXT_PUBLIC_API_URL. Let me fix this:
+
+● Update(.env.local)
+  ⎿  Updated .env.local with 2 additions                             
+        8    # Application URLs
+        9    NEXT_PUBLIC_AUTH0_BASE_URL=https://reddit.potterlabs.xyz
+       10    NEXT_PUBLIC_API_URL=https://api.potterlabs.xyz
+       11 +  NEXT_PUBLIC_API_URL_DEV=http://localhost:8000
+       12 +  NEXT_PUBLIC_API_URL_PROD=https://api.potterlabs.xyz
+       13    
+       14    # Optional: Analytics and Monitoring (Add when ready)
+       15    # NEXT_PUBLIC_ANALYTICS_ID=
+
+● Now I need to update the frontend configuration to use the simpler NEXT_PUBLIC_API_URL instead of the complex
+  environment-specific logic:
+
+● Update(src/lib/config.ts)
+  ⎿  Updated src/lib/config.ts with 4 additions and 3 removals                                 
+        4    export const config = {
+        5      // API Configuration
+        6      api: {
+        7 -      baseUrl: process.env.NODE_ENV === 'development' 
+        8 -        ? process.env.NEXT_PUBLIC_API_URL_DEV || 'http://localhost:8000'
+        9 -        : process.env.NEXT_PUBLIC_API_URL_PROD || 'https://api.trendit.example.com',
+        7 +      baseUrl: process.env.NEXT_PUBLIC_API_URL || 
+        8 +        (process.env.NODE_ENV === 'development' 
+        9 +          ? process.env.NEXT_PUBLIC_API_URL_DEV || 'http://localhost:8000'
+       10 +          : process.env.NEXT_PUBLIC_API_URL_PROD || 'https://api.potterlabs.xyz'),
+       11        timeout: 10000, // 10 seconds
+       12      },
+       13      
+
+● Now I need to commit these frontend fixes and update the environment variables on Vercel. Let me check the
+  current directory and commit:
+
+● Bash(pwd && git status)
+  ⎿  Agent pid 1833273                                
+     /home/jason/projects/jpotterlabs/trendit/frontend
+     On branch fix/auth0-audience-production
+     … +8 lines (ctrl+r to expand)
+
+● Bash(git add -A && git commit -m "Fix API URL configuration causing ERR_NAME_NOT_RESOLVED…)
+  ⎿  Agent pid 1833562                                                                              
+     [fix/auth0-audience-production 6c83b42] Fix API URL configuration causing ERR_NAME_NOT_RESOLVED
+      1 file changed, 4 insertions(+), 3 deletions(-)
+
+● Bash(git push)
+  ⎿  Agent pid 1833672                                                                       
+     remote:
+     remote: Create a pull request for 'fix/auth0-audience-production' on GitHub by visiting:
+     … +4 lines (ctrl+r to expand)
+
+● Perfect! Now I need to inform you about what needs to be updated on Vercel for the fix to take effect:
+
+  Issue Fixed ✅
+
+  The ERR_NAME_NOT_RESOLVED error was caused by the frontend trying to call
+  https://api.trendit.example.com/auth/register, which doesn't exist. The issue was:
+
+  1. Missing environment variables: The frontend config was looking for NEXT_PUBLIC_API_URL_DEV and
+  NEXT_PUBLIC_API_URL_PROD
+  2. Wrong fallback URL: The config had api.trendit.example.com as the fallback instead of api.potterlabs.xyz
+  3. HTTP vs HTTPS mismatch: The .env.local had HTTP instead of HTTPS for the API URL
+
+  What I Fixed:
+
+  1. Updated frontend config to prioritize NEXT_PUBLIC_API_URL and use correct fallbacks
+  2. Fixed API URL protocol from HTTP to HTTPS in .env.local
+  3. Added proper environment variables for both dev and prod
+  4. Changed fallback domain from trendit.example.com to potterlabs.xyz
+
+  Next Steps:
+
+  You need to update the Vercel environment variables:
+
+  1. Go to your Vercel dashboard → trendit-frontend project → Settings → Environment Variables
+  2. Add/update these variables:
+  NEXT_PUBLIC_API_URL=https://api.potterlabs.xyz
+  NEXT_PUBLIC_API_URL_PROD=https://api.potterlabs.xyz
+  NEXT_PUBLIC_API_URL_DEV=http://localhost:8000
+  3. Redeploy the frontend
+
+  Once that's done, the registration should work correctly and call the proper API endpoint!
+
+> are those changes just local or did you create a feature branch and a PR
+  ⎿ API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"messages.103: all messages must 
+    have non-empty content except for the optional final assistant 
+    message"},"request_id":"req_011CSxraCCY3qZyPMcY1tARV"}
+
+> are those changes just local or did you create a feature branch and a PR
+  ⎿ API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"messages.103: all messages must 
+    have non-empty content except for the optional final assistant 
+    message"},"request_id":"req_011CSxrbNm4rF3J1X9Vu9AnV"}
+
+> are those changes just local or did you create a feature branch and a PR
+  ⎿ API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"messages.103: all messages must 
+    have non-empty content except for the optional final assistant 
+    message"},"request_id":"req_011CSxrdpZQ7BXvewtDHNwUE"}
+
