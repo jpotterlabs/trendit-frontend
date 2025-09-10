@@ -18,7 +18,7 @@ import {
   Phone,
   ExternalLink
 } from 'lucide-react';
-import { useAuth } from '@/lib/contexts/auth';
+import { useAuthStore } from '@/lib/store/auth';
 import { apiClient } from '@/lib/api/client';
 
 interface SubscriptionTier {
@@ -65,7 +65,7 @@ interface SubscriptionStatus {
 }
 
 export default function BillingPage() {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [tiers, setTiers] = useState<Record<string, SubscriptionTier>>({});
   const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
