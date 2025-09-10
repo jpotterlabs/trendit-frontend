@@ -7,7 +7,11 @@ export const config = {
     baseUrl: process.env.NEXT_PUBLIC_API_URL || 
       (process.env.NODE_ENV === 'development' 
         ? process.env.NEXT_PUBLIC_API_URL_DEV || 'http://localhost:8000'
-        : process.env.NEXT_PUBLIC_API_URL_PROD || 'https://api.potterlabs.xyz'),
+        : (process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview'
+            ? (process.env.NEXT_PUBLIC_API_URL_PREVIEW
+               || process.env.NEXT_PUBLIC_API_URL_PROD
+               || 'https://api.potterlabs.xyz')
+            : (process.env.NEXT_PUBLIC_API_URL_PROD || 'https://api.potterlabs.xyz'))),
     timeout: 10000, // 10 seconds
   },
   
@@ -43,24 +47,8 @@ export const getApiUrl = (): string => {
     console.log(`🔗 API URL: ${url}`);
   }
   
-  return url;
-};
-
-// Validate configuration
-export const validateConfig = (): boolean => {
-  const requiredVars = [
-    'NEXT_PUBLIC_API_URL_DEV',
-    'NEXT_PUBLIC_API_URL_PROD',
-  ];
-  
-  const missing = requiredVars.filter(varName => !process.env[varName]);
-  
-  if (missing.length > 0) {
-    console.warn('⚠️  Missing environment variables:', missing);
-    return false;
-  }
-  
-  return true;
+  // Trim trailing slash to prevent double slashes in requests
+  return url.endsWith('/') ? url.slice(0, -1) : url;
 };
 
 export default config;

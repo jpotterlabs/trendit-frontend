@@ -17,8 +17,8 @@ export function StatsCards({ dataSummary, jobs, isLoading = false }: StatsCardsP
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="card-premium shadow-medium overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 via-neutral-500/5 to-gray-500/5" />
-            <CardHeader className="animate-pulse relative">
+            <div className="absolute inset-0 pointer-events-none z-0 bg-gradient-to-br from-slate-500/5 via-neutral-500/5 to-gray-500/5" />
+            <CardHeader className="animate-pulse relative z-10">
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
               <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
             </CardHeader>
@@ -78,8 +78,8 @@ export function StatsCards({ dataSummary, jobs, isLoading = false }: StatsCardsP
         const Icon = stat.icon;
         return (
           <Card key={stat.name} className="card-premium shadow-medium overflow-hidden hover:shadow-strong transition-all duration-300 hover:scale-[1.02] group">
-            <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient}`} />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <div className={`absolute inset-0 pointer-events-none z-0 bg-gradient-to-br ${stat.gradient}`} />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-semibold text-foreground/80 group-hover:text-foreground transition-colors">
                 {stat.name}
               </CardTitle>
