@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { DashboardLayout } from '@/components/dashboard/layout';
 import { StatsCards } from '@/components/dashboard/overview/stats-cards';
 import { RecentJobs } from '@/components/dashboard/overview/recent-jobs';
@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { user, subscription } = useAuthStore();
+  const { user, subscription, isAuthenticated, apiKey } = useAuthStore();
   const {
     jobs,
     dataSummary,
@@ -22,10 +22,39 @@ export default function DashboardPage() {
     loadDataSummary,
   } = useDashboardStore();
 
+  // Memoize the dashboard data loading function
+  const loadDashboardData = useCallback(async () => {
+    if (!isAuthenticated || !apiKey) {
+      console.log('Not authenticated or no API key, skipping dashboard data load');
+      return;
+    }
+    
+    // Load data with staggered timing to prevent API spam
+    const loadPromises = [];
+    
+    // Start jobs loading immediately
+    loadPromises.push(loadJobs());
+    
+    // Delay data summary loading by 300ms to stagger requests
+    loadPromises.push(
+      new Promise(resolve => {
+        setTimeout(async () => {
+          await loadDataSummary();
+          resolve(undefined);
+        }, 300);
+      })
+    );
+    
+    // Wait for all loads to complete
+    await Promise.allSettled(loadPromises);
+  }, [isAuthenticated, apiKey, loadJobs, loadDataSummary]);
+
   useEffect(() => {
-    loadJobs();
-    loadDataSummary();
-  }, [loadJobs, loadDataSummary]);
+    // Only load if we have authentication
+    if (isAuthenticated && apiKey) {
+      loadDashboardData();
+    }
+  }, [isAuthenticated, apiKey, loadDashboardData]);
 
   const headerActions = (
     <Button asChild className="bg-gradient-to-r from-sapphire-500 to-violet-500 hover:from-sapphire-600 hover:to-violet-600 text-white shadow-glow-sapphire transition-all duration-300 hover:scale-105">

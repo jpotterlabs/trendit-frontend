@@ -21,6 +21,9 @@ interface AuthState {
   loadSubscription: () => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  
+  // Request tracking to prevent duplicate calls
+  _loadingSubscription: boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -33,6 +36,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      _loadingSubscription: false,
 
       login: async (email: string, password: string) => {
         try {
@@ -61,7 +65,10 @@ export const useAuthStore = create<AuthState>()(
 
           // Load subscription data after login (now using API key)
           // Skip loading user profile for now - endpoint doesn't exist yet
-          get().loadSubscription();
+          // Use setTimeout to batch requests and avoid immediate rate limiting
+          setTimeout(() => {
+            get().loadSubscription();
+          }, 500);
           
         } catch (error: any) {
           let message = 'Login failed';
@@ -118,20 +125,31 @@ export const useAuthStore = create<AuthState>()(
 
           const data = await response.json();
           
+          // Handle case where backend reuses existing API key
+          let apiKeyToUse = data.api_key;
+          if (data.api_key === "existing_key_reused") {
+            // Keep the existing API key from storage
+            const currentState = get();
+            apiKeyToUse = currentState.apiKey;
+            console.log('Backend reused existing API key, keeping current key in storage');
+          }
+          
           // Set up the authenticated state with our backend's response
           set({
             user: data.user,
             token: data.jwt_token,
-            apiKey: data.api_key,
+            apiKey: apiKeyToUse,
             isAuthenticated: true,
             isLoading: false,
           });
 
           // Set the API client to use the API key for future requests
-          api.setToken(data.api_key);
+          api.setToken(apiKeyToUse);
 
-          // Load subscription data
-          get().loadSubscription();
+          // Load subscription data with delay to prevent rate limiting
+          setTimeout(() => {
+            get().loadSubscription();
+          }, 500);
           
         } catch (error: any) {
           let message = 'Auth0 login failed';
@@ -222,15 +240,44 @@ export const useAuthStore = create<AuthState>()(
 
       loadSubscription: async () => {
         try {
-          const { apiKey } = get();
+          const { apiKey, _loadingSubscription, subscription } = get();
           if (!apiKey) return;
+          
+          // Prevent duplicate subscription loading requests
+          if (_loadingSubscription) {
+            console.log('Subscription already loading, skipping duplicate request');
+            return;
+          }
+          
+          // If subscription was loaded recently (within 5 minutes), skip reload
+          if (subscription && subscription._loadedAt) {
+            const loadedAt = new Date(subscription._loadedAt);
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            if (loadedAt > fiveMinutesAgo) {
+              console.log('Subscription data is fresh, skipping reload');
+              return;
+            }
+          }
+          
+          set({ _loadingSubscription: true });
           
           // Make sure we're using the API key for this request
           api.setToken(apiKey);
-          const subscription = await api.getSubscriptionStatus();
-          set({ subscription });
+          const subscriptionData = await api.getSubscriptionStatus();
+          
+          // Add timestamp to track when data was loaded
+          const subscriptionWithTimestamp = {
+            ...subscriptionData,
+            _loadedAt: new Date().toISOString()
+          };
+          
+          set({ 
+            subscription: subscriptionWithTimestamp,
+            _loadingSubscription: false 
+          });
         } catch (error: any) {
           console.error('Failed to load subscription:', error);
+          set({ _loadingSubscription: false });
           // Don't logout on subscription error, just log it
         }
       },
@@ -249,6 +296,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
         apiKey: state.apiKey,
+        subscription: state.subscription,
         isAuthenticated: state.isAuthenticated,
       }),
     }
