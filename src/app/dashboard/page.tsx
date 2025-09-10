@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDashboardStore } from '@/lib/store/dashboard';
 import { useAuthStore } from '@/lib/store/auth';
-import { Plus, BarChart3, Download } from 'lucide-react';
+import { Plus, BarChart3, Download, Zap, Activity, TrendingUp, CreditCard } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   }, [loadJobs, loadDataSummary]);
 
   const headerActions = (
-    <Button asChild>
+    <Button asChild className="bg-gradient-to-r from-sapphire-500 to-violet-500 hover:from-sapphire-600 hover:to-violet-600 text-white shadow-glow-sapphire transition-all duration-300 hover:scale-105">
       <Link href="/dashboard/jobs/new">
         <Plus className="mr-2 h-4 w-4" />
         New Collection Job
@@ -42,86 +42,120 @@ export default function DashboardPage() {
       description="Monitor your Reddit data collection and analytics"
       headerActions={headerActions}
     >
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        <StatsCards
-          dataSummary={dataSummary}
-          jobs={jobs}
-          isLoading={isLoading}
-        />
+      <div className="space-y-8">
+        {/* Enhanced Stats Cards */}
+        <div className="animate-fade-in">
+          <StatsCards
+            dataSummary={dataSummary}
+            jobs={jobs}
+            isLoading={isLoading}
+          />
+        </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Jobs - Takes up 2/3 on large screens */}
-          <div className="lg:col-span-2">
+        {/* Revolutionary Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 stagger">
+          {/* Recent Jobs - Enhanced Layout */}
+          <div className="lg:col-span-2 animate-slide-in-left">
             <RecentJobs jobs={jobs} isLoading={isLoading} />
           </div>
 
-          {/* Quick Actions & Info */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+          {/* Premium Actions & Info Panel */}
+          <div className="space-y-6 animate-slide-in-right">
+            {/* Revolutionary Quick Actions */}
+            <Card className="card-premium gradient-data border-0 shadow-medium overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-sapphire-500/5 via-violet-500/5 to-emerald-500/5" />
+              <CardHeader className="relative">
+                <CardTitle className="text-lg font-bold text-gradient-primary flex items-center">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sapphire-500 to-violet-500 flex items-center justify-center mr-3">
+                    <Zap className="h-4 w-4 text-white" />
+                  </div>
+                  Quick Actions
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline" asChild>
+              <CardContent className="space-y-3 relative">
+                <Button className="w-full justify-start bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0 shadow-glow-emerald transition-all duration-300 hover:scale-[1.02]" asChild>
                   <Link href="/dashboard/jobs/new">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Collection Job
+                    <Plus className="mr-3 h-4 w-4" />
+                    <div className="text-left">
+                      <div className="font-semibold">Create Collection Job</div>
+                      <div className="text-xs opacity-90">Start gathering Reddit data</div>
+                    </div>
                   </Link>
                 </Button>
-                <Button className="w-full justify-start" variant="outline" asChild>
+                <Button className="w-full justify-start bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 shadow-glow-sapphire transition-all duration-300 hover:scale-[1.02]" asChild>
                   <Link href="/dashboard/analytics">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    View Analytics
+                    <BarChart3 className="mr-3 h-4 w-4" />
+                    <div className="text-left">
+                      <div className="font-semibold">View Analytics</div>
+                      <div className="text-xs opacity-90">Explore data insights</div>
+                    </div>
                   </Link>
                 </Button>
-                <Button className="w-full justify-start" variant="outline" asChild>
+                <Button className="w-full justify-start bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white border-0 shadow-glow-violet transition-all duration-300 hover:scale-[1.02]" asChild>
                   <Link href="/dashboard/export">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Data
+                    <Download className="mr-3 h-4 w-4" />
+                    <div className="text-left">
+                      <div className="font-semibold">Export Data</div>
+                      <div className="text-xs opacity-90">Download your reports</div>
+                    </div>
                   </Link>
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Subscription Info */}
+            {/* Premium Subscription Info */}
             {subscription && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Usage Overview</CardTitle>
+              <Card className="card-premium border-0 shadow-medium overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/5" />
+                <CardHeader className="relative">
+                  <CardTitle className="text-lg font-bold flex items-center">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mr-3">
+                      <Activity className="h-4 w-4 text-white" />
+                    </div>
+                    Usage Overview
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>API Calls</span>
-                      <span>
-                        {subscription.current_usage.api_calls || 0} / {subscription.limits.api_calls || 0}
-                      </span>
+                <CardContent className="space-y-6 relative">
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm font-medium">
+                        <span className="text-foreground">API Calls</span>
+                        <span className="text-muted-foreground">
+                          {subscription.current_usage.api_calls || 0} / {subscription.limits.api_calls || 0}
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <Progress 
+                          value={subscription.usage_percentage.api_calls || 0} 
+                          className="h-3 bg-muted"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-sapphire-500 to-violet-500 rounded-full opacity-80" 
+                             style={{ width: `${Math.min(subscription.usage_percentage.api_calls || 0, 100)}%` }} />
+                      </div>
                     </div>
-                    <Progress 
-                      value={subscription.usage_percentage.api_calls || 0} 
-                      className="h-2"
-                    />
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm font-medium">
+                        <span className="text-foreground">Exports</span>
+                        <span className="text-muted-foreground">
+                          {subscription.current_usage.exports || 0} / {subscription.limits.exports || 0}
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <Progress 
+                          value={subscription.usage_percentage.exports || 0} 
+                          className="h-3 bg-muted"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full opacity-80" 
+                             style={{ width: `${Math.min(subscription.usage_percentage.exports || 0, 100)}%` }} />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Exports</span>
-                      <span>
-                        {subscription.current_usage.exports || 0} / {subscription.limits.exports || 0}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={subscription.usage_percentage.exports || 0} 
-                      className="h-2"
-                    />
-                  </div>
-
-                  <div className="pt-2 border-t">
-                    <Button variant="outline" size="sm" className="w-full" asChild>
+                  <div className="pt-4 border-t border-gray-300 dark:border-gray-600">
+                    <Button variant="outline" size="sm" className="w-full border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all duration-300" asChild>
                       <Link href="/dashboard/billing">
+                        <CreditCard className="mr-2 h-4 w-4" />
                         Manage Subscription
                       </Link>
                     </Button>
@@ -130,24 +164,40 @@ export default function DashboardPage() {
               </Card>
             )}
 
-            {/* Getting Started */}
+            {/* Revolutionary Getting Started */}
             {jobs.length === 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Getting Started</CardTitle>
+              <Card className="card-premium border-0 shadow-strong overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-cyan-500/10 to-blue-500/10" />
+                <CardHeader className="relative">
+                  <CardTitle className="text-lg font-bold text-gradient-data flex items-center">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center mr-3">
+                      <TrendingUp className="h-4 w-4 text-white" />
+                    </div>
+                    Getting Started
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-gray-600 space-y-2">
-                    <p>Welcome to Trendit! Here's how to get started:</p>
-                    <ol className="list-decimal list-inside space-y-1 text-xs">
-                      <li>Create your first collection job</li>
-                      <li>Monitor the collection progress</li>
-                      <li>Analyze your collected data</li>
-                      <li>Export insights and reports</li>
-                    </ol>
+                <CardContent className="relative">
+                  <div className="space-y-4">
+                    <p className="text-muted-foreground font-medium">Welcome to Trendit! Transform your Reddit data analysis:</p>
+                    <div className="space-y-3">
+                      {[
+                        { icon: Plus, text: "Create your first collection job", color: "from-emerald-500 to-teal-500" },
+                        { icon: Activity, text: "Monitor collection progress", color: "from-sapphire-500 to-violet-500" },
+                        { icon: BarChart3, text: "Analyze your collected data", color: "from-violet-500 to-purple-500" },
+                        { icon: Download, text: "Export insights and reports", color: "from-amber-500 to-orange-500" }
+                      ].map((step, index) => (
+                        <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/30 transition-all duration-200">
+                          <div className={`w-6 h-6 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center flex-shrink-0`}>
+                            <step.icon className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground">{step.text}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <Button className="w-full mt-4" asChild>
+                  <Button className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white shadow-glow-emerald transition-all duration-300 hover:scale-[1.02]" asChild>
                     <Link href="/dashboard/jobs/new">
+                      <TrendingUp className="mr-2 h-4 w-4" />
                       Start First Collection
                     </Link>
                   </Button>

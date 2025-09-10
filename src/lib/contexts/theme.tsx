@@ -17,33 +17,60 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    
     // Check for saved theme preference or default to 'light'
     const savedTheme = localStorage.getItem('trendit-theme') as Theme | null;
-    if (savedTheme) {
+    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
       setTheme(savedTheme);
     } else {
       // Check system preference
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      setTheme(systemTheme);
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setTheme(systemTheme);
+      }
     }
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || typeof window === 'undefined') return;
     
     // Apply theme to document
     const root = window.document.documentElement;
+    const body = window.document.body;
+    
+    console.log('🎨 Applying theme classes:', theme);
+    console.log('🎨 Root classes before:', Array.from(root.classList));
+    
+    // Remove both theme classes first
     root.classList.remove('light', 'dark');
+    body.classList.remove('light', 'dark');
+    
+    // Add the current theme class
     root.classList.add(theme);
+    body.classList.add(theme);
+    
+    console.log('🎨 Root classes after:', Array.from(root.classList));
+    
+    // Force update CSS custom properties
+    if (theme === 'dark') {
+      root.style.colorScheme = 'dark';
+    } else {
+      root.style.colorScheme = 'light';
+    }
     
     // Save to localStorage
-    localStorage.setItem('trendit-theme', theme);
+    try {
+      localStorage.setItem('trendit-theme', theme);
+    } catch (e) {
+      // Ignore localStorage errors
+      console.warn('Failed to save theme preference:', e);
+    }
   }, [theme, mounted]);
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    console.log('🎨 Theme toggle:', theme, '→', newTheme);
+    setTheme(newTheme);
   };
 
   const value = {
@@ -52,11 +79,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme,
   };
 
-  // Prevent flash on mount
-  if (!mounted) {
-    return <div style={{ visibility: 'hidden' }}>{children}</div>;
-  }
-
+  // Show content immediately but apply theme when mounted
   return (
     <ThemeContext.Provider value={value}>
       {children}

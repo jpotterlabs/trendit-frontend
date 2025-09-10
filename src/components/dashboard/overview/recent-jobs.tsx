@@ -17,16 +17,22 @@ interface RecentJobsProps {
 export function RecentJobs({ jobs, isLoading = false }: RecentJobsProps) {
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Collection Jobs</CardTitle>
+      <Card className="card-premium shadow-medium overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-sapphire-500/5 via-violet-500/5 to-emerald-500/5" />
+        <CardHeader className="relative">
+          <CardTitle className="text-lg font-bold text-gradient-primary flex items-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sapphire-500 to-violet-500 flex items-center justify-center mr-3">
+              <Database className="h-4 w-4 text-white" />
+            </div>
+            Recent Collection Jobs
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-2 bg-gray-200 rounded"></div>
+              <div key={i} className="animate-pulse p-4 bg-card/50 rounded-lg border border-border/50">
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-2 bg-muted rounded"></div>
               </div>
             ))}
           </div>
@@ -53,19 +59,27 @@ export function RecentJobs({ jobs, isLoading = false }: RecentJobsProps) {
   const recentJobs = jobs.slice(0, 5);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Recent Collection Jobs</CardTitle>
-        <Button variant="outline" size="sm" asChild>
+    <Card className="card-premium shadow-medium overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-sapphire-500/5 via-violet-500/5 to-emerald-500/5" />
+      <CardHeader className="flex flex-row items-center justify-between relative">
+        <CardTitle className="text-lg font-bold text-gradient-primary flex items-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sapphire-500 to-violet-500 flex items-center justify-center mr-3">
+            <Database className="h-4 w-4 text-white" />
+          </div>
+          Recent Collection Jobs
+        </CardTitle>
+        <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all duration-300" asChild>
           <Link href="/dashboard/jobs">View All</Link>
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative">
         {recentJobs.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            <Database className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p>No collection jobs yet</p>
-            <Button variant="outline" size="sm" className="mt-2" asChild>
+          <div className="text-center py-8">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center mx-auto mb-4 shadow-glow-emerald">
+              <Database className="h-8 w-8 text-white" />
+            </div>
+            <p className="text-muted-foreground font-medium mb-4">No collection jobs yet</p>
+            <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white shadow-glow-emerald transition-all duration-300 hover:scale-[1.02]" size="sm" asChild>
               <Link href="/dashboard/jobs">Create First Job</Link>
             </Button>
           </div>
@@ -74,13 +88,13 @@ export function RecentJobs({ jobs, isLoading = false }: RecentJobsProps) {
             {recentJobs.map((job) => (
               <div
                 key={job.job_id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg hover:bg-card/80 hover:shadow-soft hover:border-primary/20 transition-all duration-300 group"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-3">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-gradient-primary transition-all duration-200">
                           {job.subreddits.join(', ')}
                         </p>
                         <Badge
@@ -90,7 +104,7 @@ export function RecentJobs({ jobs, isLoading = false }: RecentJobsProps) {
                           {job.status}
                         </Badge>
                       </div>
-                      <div className="mt-1 flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="mt-1 flex items-center space-x-4 text-xs text-muted-foreground font-medium">
                         <span>{job.collected_posts} posts</span>
                         <span>{job.collected_comments} comments</span>
                         <span>
@@ -99,7 +113,7 @@ export function RecentJobs({ jobs, isLoading = false }: RecentJobsProps) {
                       </div>
                       {(job.status === JobStatus.RUNNING || job.status === JobStatus.PENDING) && (
                         <div className="mt-2">
-                          <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                          <div className="flex items-center justify-between text-xs text-foreground/70 font-medium mb-1">
                             <span>Progress</span>
                             <span>{job.progress}%</span>
                           </div>
