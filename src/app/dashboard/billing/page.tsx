@@ -70,12 +70,15 @@ export default function BillingPage() {
   const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBillingData = async () => {
       if (!user) return;
 
       try {
+        setError(null);
+        
         // Fetch available tiers
         const tiersResponse = await apiClient.get('/api/billing/tiers');
         setTiers(tiersResponse.data.tiers);
@@ -84,7 +87,7 @@ export default function BillingPage() {
         const statusResponse = await apiClient.get('/api/billing/subscription/status');
         setCurrentSubscription(statusResponse.data);
       } catch (error) {
-        console.error('Error fetching billing data:', error);
+        setError('Unable to load billing information. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -97,6 +100,8 @@ export default function BillingPage() {
     if (!user || upgrading) return;
 
     setUpgrading(tierKey);
+    setError(null);
+    
     try {
       const response = await apiClient.post('/api/billing/checkout/create', {
         tier: tierKey,
@@ -106,9 +111,11 @@ export default function BillingPage() {
 
       if (response.data.checkout_url) {
         window.location.href = response.data.checkout_url;
+      } else {
+        setError('Unable to create checkout session. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      setError('Failed to initiate upgrade. Please try again or contact support.');
     } finally {
       setUpgrading(null);
     }
@@ -155,6 +162,16 @@ export default function BillingPage() {
   return (
     <DashboardLayout title="Billing & Subscription" description="Manage your subscription and usage">
       <div className="space-y-8">
+        {/* Error Display */}
+        {error && (
+          <Card className="card-premium border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30">
+            <CardContent className="pt-6">
+              <div id="billing-error" className="flex items-center gap-2 text-red-600 dark:text-red-400" role="alert">
+                <span className="text-sm font-medium">{error}</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {/* Current Usage Overview */}
         {currentSubscription && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -184,7 +201,8 @@ export default function BillingPage() {
             </Card>
 
             {Object.entries(currentSubscription.current_usage).map(([type, usage]) => {
-              const percentage = currentSubscription.usage_percentage[type] || 0;
+              const rawPercentage = currentSubscription.usage_percentage[type] || 0;
+              const percentage = Math.min(Math.max(rawPercentage, 0), 100); // Clamp between 0-100
               const limit = type === 'api_call' ? currentSubscription.limits.api_calls_per_month :
                            type === 'export' ? currentSubscription.limits.exports_per_month :
                            currentSubscription.limits.sentiment_analysis_per_month;
@@ -204,6 +222,11 @@ export default function BillingPage() {
                     <Progress 
                       value={percentage} 
                       className="h-2"
+                      role="progressbar"
+                      aria-valuenow={percentage}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${formatUsageType(type)} usage: ${usage} of ${limit} used (${percentage.toFixed(1)}%)`}
                       style={{
                         '--progress-background': percentage > 80 ? '#ef4444' : 
                                                  percentage > 60 ? '#f59e0b' : '#10b981'
@@ -230,16 +253,16 @@ export default function BillingPage() {
               return (
                 <Card 
                   key={tierKey} 
-                  className={`card-premium shadow-medium relative overflow-hidden transition-all duration-300 hover:shadow-strong hover:scale-[1.02] ${
+                  className={`card-premium shadow-medium relative overflow-hidden transition-all motion-safe:duration-300 motion-reduce:transition-none hover:shadow-strong motion-safe:hover:scale-[1.02] motion-reduce:hover:scale-100 ${
                     isPopular ? 'ring-2 ring-sapphire-500 ring-opacity-50' : ''
                   }`}
                 >
                   {isPopular && (
-                    <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-sapphire-500 to-violet-500 px-3 py-1 text-center">
+                    <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-sapphire-500 to-violet-500 px-3 py-1 text-center pointer-events-none">
                       <span className="text-xs font-semibold text-white">Most Popular</span>
                     </div>
                   )}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${
+                  <div className={`absolute inset-0 bg-gradient-to-br pointer-events-none ${
                     tierKey === 'free' ? 'from-slate-500/5 to-gray-500/5' :
                     tierKey === 'pro' ? 'from-sapphire-500/5 to-violet-500/5' :
                     'from-violet-500/5 to-purple-500/5'
@@ -279,17 +302,22 @@ export default function BillingPage() {
                       <Button
                         onClick={() => handleUpgrade(tierKey)}
                         disabled={upgrading === tierKey || tierKey === 'free'}
-                        className={`w-full ${
+                        aria-describedby={error ? 'billing-error' : undefined}
+                        className={`w-full focus:ring-2 focus:ring-offset-2 focus:ring-opacity-50 ${
                           tierKey === 'pro' 
-                            ? 'bg-gradient-to-r from-sapphire-500 to-violet-500 hover:from-sapphire-600 hover:to-violet-600'
+                            ? 'bg-gradient-to-r from-sapphire-500 to-violet-500 hover:from-sapphire-600 hover:to-violet-600 focus:ring-sapphire-500'
                             : tierKey === 'enterprise'
-                            ? 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600'
-                            : 'bg-gradient-to-r from-slate-500 to-gray-500 hover:from-slate-600 hover:to-gray-600'
-                        } text-white font-semibold transition-all duration-300`}
+                            ? 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 focus:ring-violet-500'
+                            : 'bg-gradient-to-r from-slate-500 to-gray-500 hover:from-slate-600 hover:to-gray-600 focus:ring-slate-500'
+                        } text-white font-semibold transition-all motion-safe:duration-300 motion-reduce:transition-none disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {upgrading === tierKey ? (
                           <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <div 
+                              className="w-4 h-4 border-2 border-white border-t-transparent rounded-full motion-safe:animate-spin motion-reduce:animate-none" 
+                              role="status"
+                              aria-label="Processing upgrade"
+                            />
                             Processing...
                           </div>
                         ) : (
