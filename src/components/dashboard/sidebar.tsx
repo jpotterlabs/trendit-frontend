@@ -96,6 +96,13 @@ const navigation = [
     description: 'Sentiment analysis',
     gradient: 'from-emerald-500 to-cyan-500'
   },
+  { 
+    name: 'Billing', 
+    href: '/dashboard/billing', 
+    icon: CreditCard,
+    description: 'Subscription & usage',
+    gradient: 'from-violet-500 to-rose-500'
+  },
 ];
 
 export function DashboardSidebar() {
