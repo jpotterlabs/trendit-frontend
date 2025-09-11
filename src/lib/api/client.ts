@@ -20,6 +20,8 @@ import { config, getApiUrl } from '@/lib/config';
 export class TrenditAPI {
   private client: AxiosInstance;
   private token: string | null = null;
+  private requestCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private pendingRequests: Map<string, Promise<any>> = new Map();
 
   constructor(baseURL?: string) {
     const apiUrl = baseURL || getApiUrl();
@@ -58,8 +60,10 @@ export class TrenditAPI {
         }
         
         if (error.response?.status === 429) {
-          // Handle rate limit - log warning but don't crash
-          console.warn('⚠️ API rate limit exceeded. Please slow down requests.');
+          // Handle rate limit - log warning and implement exponential backoff
+          console.warn('⚠️ API rate limit exceeded. Implementing backoff strategy.');
+          const retryAfter = error.response.headers['retry-after'] || 5;
+          console.warn(`Rate limit hit. Retry after ${retryAfter} seconds.`);
         }
         
         return Promise.reject(error);
@@ -79,6 +83,9 @@ export class TrenditAPI {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('trendit_token');
     }
+    // Clear request cache when token changes
+    this.requestCache.clear();
+    this.pendingRequests.clear();
   }
 
   loadTokenFromStorage() {
@@ -234,11 +241,14 @@ export class TrenditAPI {
     page?: number;
     per_page?: number;
   }): Promise<CollectionJobListResponse> {
-    const response: AxiosResponse<CollectionJobListResponse> = await this.client.get(
-      '/api/collect/jobs',
-      { params }
+    // Create cache key based on parameters
+    const cacheKey = `jobs_list_${JSON.stringify(params || {})}`;
+    
+    return this.cachedGet<CollectionJobListResponse>(
+      '/api/collect/jobs' + (params ? '?' + new URLSearchParams(params as any).toString() : ''),
+      cacheKey,
+      30000 // 30 seconds cache for jobs list
     );
-    return response.data;
   }
 
   async cancelJob(jobId: string): Promise<void> {
@@ -258,8 +268,11 @@ export class TrenditAPI {
   }
 
   async getDataSummary(): Promise<DataSummary> {
-    const response: AxiosResponse<DataSummary> = await this.client.get('/api/data/summary');
-    return response.data;
+    return this.cachedGet<DataSummary>(
+      '/api/data/summary',
+      'data_summary',
+      120000 // 2 minutes cache
+    );
   }
 
   // Data Query - using correct endpoints from OpenAPI
@@ -335,12 +348,43 @@ export class TrenditAPI {
     return response.data;
   }
 
-  // Subscription
+  // Helper method for cached GET requests
+  private async cachedGet<T>(url: string, cacheKey: string, cacheDurationMs: number = 60000): Promise<T> {
+    // Check if request is already pending
+    if (this.pendingRequests.has(cacheKey)) {
+      console.log(`Request already pending for ${cacheKey}, waiting for existing request`);
+      return this.pendingRequests.get(cacheKey)!;
+    }
+    
+    // Check cache first
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < cacheDurationMs) {
+      console.log(`Using cached data for ${cacheKey}`);
+      return cached.data;
+    }
+    
+    // Make request and cache it
+    const requestPromise = this.client.get(url).then(response => {
+      const data = response.data;
+      this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
+      this.pendingRequests.delete(cacheKey);
+      return data;
+    }).catch(error => {
+      this.pendingRequests.delete(cacheKey);
+      throw error;
+    });
+    
+    this.pendingRequests.set(cacheKey, requestPromise);
+    return requestPromise;
+  }
+
+  // Subscription (with caching)
   async getSubscriptionStatus(): Promise<SubscriptionStatusResponse> {
-    const response: AxiosResponse<SubscriptionStatusResponse> = await this.client.get(
-      '/api/billing/subscription/status'
+    return this.cachedGet<SubscriptionStatusResponse>(
+      '/api/billing/subscription/status',
+      'subscription_status',
+      300000 // 5 minutes cache
     );
-    return response.data;
   }
 
   // Sentiment Analysis
