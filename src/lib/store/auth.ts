@@ -250,8 +250,8 @@ export const useAuthStore = create<AuthState>()(
           }
           
           // If subscription was loaded recently (within 5 minutes), skip reload
-          if (subscription && subscription._loadedAt) {
-            const loadedAt = new Date(subscription._loadedAt);
+          if (subscription && (subscription as any)._loadedAt) {
+            const loadedAt = new Date((subscription as any)._loadedAt);
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
             if (loadedAt > fiveMinutesAgo) {
               console.log('Subscription data is fresh, skipping reload');

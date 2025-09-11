@@ -19,15 +19,16 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
-import { apiClient } from '@/lib/api/client';
+import { api } from '@/lib/api/client';
 
 interface SubscriptionTier {
+  key: string;
   name: string;
   price: number;
   currency: string;
   interval: string;
   features: string[];
-  limits: {
+  limits?: {
     api_calls_per_month: number;
     exports_per_month: number;
     sentiment_analysis_per_month: number;
@@ -39,29 +40,16 @@ interface SubscriptionTier {
 interface SubscriptionStatus {
   tier: string;
   status: string;
-  current_period_end: string | null;
-  next_billed_at: string | null;
+  current_period_end?: string;
+  next_billed_at?: string;
   price_per_month: number;
   currency: string;
-  limits: {
-    api_calls_per_month: number;
-    exports_per_month: number;
-    sentiment_analysis_per_month: number;
-    data_retention_days: number;
-  };
-  current_usage: {
-    api_call: number;
-    export: number;
-    sentiment_analysis: number;
-  };
-  usage_percentage: {
-    api_call: number;
-    export: number;
-    sentiment_analysis: number;
-  };
+  limits: { [key: string]: number };
+  current_usage: { [key: string]: number };
+  usage_percentage: { [key: string]: number };
   is_trial: boolean;
-  trial_end_date: string | null;
-  customer_portal_url: string | null;
+  trial_end_date?: string;
+  customer_portal_url?: string;
 }
 
 export default function BillingPage() {
@@ -79,13 +67,33 @@ export default function BillingPage() {
       try {
         setError(null);
         
-        // Fetch available tiers
-        const tiersResponse = await apiClient.get('/api/billing/tiers');
-        setTiers(tiersResponse.data.tiers);
+        // Fetch available tiers (placeholder - need to implement getBillingTiers method)
+        // const tiers = await api.getBillingTiers();
+        // setTiers(tiers);
+        
+        // For now, use mock data
+        setTiers({
+          free: {
+            key: 'free',
+            name: 'Free',
+            price: 0,
+            currency: 'USD',
+            interval: 'month',
+            features: ['100 API calls/month', '10 exports/month', 'Basic support']
+          },
+          pro: {
+            key: 'pro',
+            name: 'Pro',
+            price: 29,
+            currency: 'USD',
+            interval: 'month',
+            features: ['10,000 API calls/month', '100 exports/month', 'Priority support', 'Advanced analytics']
+          }
+        });
 
-        // Fetch current subscription status
-        const statusResponse = await apiClient.get('/api/billing/subscription/status');
-        setCurrentSubscription(statusResponse.data);
+        // Fetch current subscription status using existing method
+        const subscriptionStatus = await api.getSubscriptionStatus();
+        setCurrentSubscription(subscriptionStatus);
       } catch (error) {
         setError('Unable to load billing information. Please try again later.');
       } finally {
@@ -103,17 +111,22 @@ export default function BillingPage() {
     setError(null);
     
     try {
-      const response = await apiClient.post('/api/billing/checkout/create', {
-        tier: tierKey,
-        success_url: `${window.location.origin}/dashboard/billing?success=true`,
-        cancel_url: `${window.location.origin}/dashboard/billing?canceled=true`
-      });
-
-      if (response.data.checkout_url) {
-        window.location.href = response.data.checkout_url;
-      } else {
-        setError('Unable to create checkout session. Please try again.');
-      }
+      // Placeholder for checkout creation - need to implement createCheckout method
+      // const response = await api.createCheckout({
+      //   tier: tierKey,
+      //   success_url: `${window.location.origin}/dashboard/billing?success=true`,
+      //   cancel_url: `${window.location.origin}/dashboard/billing?canceled=true`
+      // });
+      
+      // For now, show upgrade message
+      setError(`Checkout for ${tierKey} tier would be created here. Backend integration needed.`);
+      
+      // When backend is ready, uncomment this:
+      // if (response.data.checkout_url) {
+      //   window.location.href = response.data.checkout_url;
+      // } else {
+      //   setError('Unable to create checkout session. Please try again.');
+      // }
     } catch (error) {
       setError('Failed to initiate upgrade. Please try again or contact support.');
     } finally {
