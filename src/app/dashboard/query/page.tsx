@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/dashboard/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Search, Filter, Download, Calendar, Users, MessageSquare, ExternalLink, Copy, ThumbsUp } from 'lucide-react';
+import { 
+  Loader2, Search, Filter, Download, Calendar, Users, MessageSquare, ExternalLink, Copy, ThumbsUp, 
+  ChevronDown, ChevronUp, Play, Image as ImageIcon, Video, Link as LinkIcon, Eye, Heart, ArrowUp, ArrowDown, 
+  MoreHorizontal, Expand 
+} from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 interface QueryFilters {
   job_ids?: string[];
@@ -22,18 +27,61 @@ interface QueryFilters {
   min_score?: number;
   max_score?: number;
   min_comments?: number;
-  date_from?: string;
-  date_to?: string;
   time_filter?: string;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
+  exclude_deleted?: boolean;
+}
+
+interface RedditPost {
+  id: string;
+  title: string;
+  content?: string;
+  selftext?: string;
+  author: string;
+  subreddit: string;
+  score: number;
+  upvote_ratio: number;
+  num_comments: number;
+  created_at: string;
+  created_utc?: string;
+  url: string;
+  thumbnail?: string;
+  post_hint?: string;
+  preview?: any;
+  media?: any;
+  is_video?: boolean;
+  domain?: string;
+  permalink?: string;
+}
+
+interface RedditComment {
+  id: string;
+  content: string;
+  author: string;
+  subreddit: string;
+  score: number;
+  created_at: string;
+  created_utc?: string;
+  post_title: string;
+  post_id?: string;
+  depth: number;
+  parent_id?: string;
+  permalink?: string;
+}
+
+interface UnifiedFeedItem {
+  type: 'post' | 'comment';
+  data: RedditPost | RedditComment;
+  comments?: RedditComment[];
+  expanded?: boolean;
 }
 
 interface QueryResult {
-  posts?: any[];
-  comments?: any[];
+  posts?: RedditPost[];
+  comments?: RedditComment[];
   total: number;
   query_time_ms: number;
   filters_applied: QueryFilters;
@@ -41,11 +89,16 @@ interface QueryResult {
 
 export default function QueryPage() {
   const [activeQueryTab, setActiveQueryTab] = useState<'advanced' | 'recent' | 'top'>('advanced');
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+  const [viewMode, setViewMode] = useState<'unified' | 'posts' | 'comments'>('unified');
+  const [feedItems, setFeedItems] = useState<UnifiedFeedItem[]>([]);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string } | null>(null);
   const [filters, setFilters] = useState<QueryFilters>({
     limit: 50,
     sort_by: 'score',
     sort_order: 'desc',
+    time_filter: 'all',
+    exclude_deleted: false,
   });
   const [recentParams, setRecentParams] = useState({
     limit: 20,
@@ -71,34 +124,100 @@ export default function QueryPage() {
     }));
   };
 
+  const createUnifiedFeed = (posts: RedditPost[], comments: RedditComment[]): UnifiedFeedItem[] => {
+    const feedItems: UnifiedFeedItem[] = [];
+    const postMap = new Map<string, UnifiedFeedItem>();
+    
+    // Add posts to feed
+    posts.forEach(post => {
+      const feedItem: UnifiedFeedItem = {
+        type: 'post',
+        data: post,
+        comments: [],
+        expanded: false
+      };
+      feedItems.push(feedItem);
+      postMap.set(post.id, feedItem);
+    });
+    
+    // Group comments with their parent posts or add as standalone
+    comments.forEach(comment => {
+      const parentPost = postMap.get(comment.post_id || '');
+      if (parentPost && parentPost.comments) {
+        parentPost.comments.push(comment);
+      } else {
+        // Standalone comment if parent post not found
+        feedItems.push({
+          type: 'comment',
+          data: comment,
+          expanded: false
+        });
+      }
+    });
+    
+    // Sort by score or date
+    return feedItems.sort((a, b) => {
+      const scoreA = a.data.score || 0;
+      const scoreB = b.data.score || 0;
+      return scoreB - scoreA;
+    });
+  };
+
   const runQuery = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Call the real API based on the active tab
-      let apiResponse;
-      if (activeTab === 'posts') {
-        apiResponse = await api.queryPosts(filters);
-      } else {
-        apiResponse = await api.queryComments(filters);
+      console.log('🔍 Query Filters being sent:', JSON.stringify(filters, null, 2));
+      console.log('🔍 View Mode:', viewMode);
+      
+      let postsData: RedditPost[] = [];
+      let commentsData: RedditComment[] = [];
+      let apiResponse: any = {};
+      
+      try {
+        // For unified view, fetch both posts and comments
+        if (viewMode === 'unified' || viewMode === 'posts') {
+          console.log('🔍 Fetching posts...');
+          const postsResponse = await api.queryPosts(filters);
+          const postsArray = postsResponse.data || postsResponse.posts || postsResponse.results || postsResponse;
+          postsData = Array.isArray(postsArray) ? postsArray : [];
+          apiResponse = postsResponse;
+        }
+        
+        if (viewMode === 'unified' || viewMode === 'comments') {
+          console.log('🔍 Fetching comments...');
+          const commentsResponse = await api.queryComments(filters);
+          const commentsArray = commentsResponse.data || commentsResponse.comments || commentsResponse.results || commentsResponse;
+          commentsData = Array.isArray(commentsArray) ? commentsArray : [];
+          if (viewMode === 'comments') apiResponse = commentsResponse;
+        }
+        
+        console.log('🔍 API calls successful');
+      } catch (apiError) {
+        console.error('🔍 API call failed:', apiError);
+        throw apiError;
       }
       
-      // Debug: Log the actual API response structure
-      console.log('🔍 Raw API Response:', apiResponse);
-      console.log('🔍 API Response keys:', Object.keys(apiResponse));
+      // Create unified feed or separate results
+      if (viewMode === 'unified') {
+        const unifiedFeed = createUnifiedFeed(postsData, commentsData);
+        setFeedItems(unifiedFeed);
+      } else {
+        const feedData = viewMode === 'posts' ? postsData : commentsData;
+        const unifiedFeed = feedData.map(item => ({
+          type: viewMode.slice(0, -1) as 'post' | 'comment',
+          data: item,
+          expanded: false,
+          comments: viewMode === 'posts' ? [] : undefined
+        }));
+        setFeedItems(unifiedFeed);
+      }
       
-      // Try different possible response structures
-      const responseData = apiResponse.data || apiResponse.posts || apiResponse.comments || apiResponse.results || apiResponse;
-      const resultArray = Array.isArray(responseData) ? responseData : (responseData?.data || responseData?.results || []);
-      
-      console.log('🔍 Extracted data array:', resultArray);
-      console.log('🔍 Data array length:', resultArray?.length);
-      
-      // Transform API response to match our expected format
       const results: QueryResult = {
-        [activeTab]: resultArray,
-        total: apiResponse.total || apiResponse.count || resultArray?.length || 0,
+        posts: postsData,
+        comments: commentsData,
+        total: apiResponse.total || apiResponse.count || (postsData.length + commentsData.length) || 0,
         query_time_ms: apiResponse.query_time_ms || apiResponse.execution_time_ms || 0,
         filters_applied: filters
       };
@@ -108,11 +227,28 @@ export default function QueryPage() {
     } catch (err: any) {
       console.error('Query API error:', err);
       
-      // Fallback to mock data if API fails
       if (err.response?.status === 404 || err.response?.status === 501) {
         setError('Query API not yet implemented. Showing sample data.');
+        const mockPosts = generateMockData('posts', 15) as RedditPost[];
+        const mockComments = generateMockData('comments', 10) as RedditComment[];
+        
+        if (viewMode === 'unified') {
+          const unifiedFeed = createUnifiedFeed(mockPosts, mockComments);
+          setFeedItems(unifiedFeed);
+        } else {
+          const feedData = viewMode === 'posts' ? mockPosts : mockComments;
+          const unifiedFeed = feedData.map(item => ({
+            type: viewMode.slice(0, -1) as 'post' | 'comment',
+            data: item,
+            expanded: false,
+            comments: viewMode === 'posts' ? [] : undefined
+          }));
+          setFeedItems(unifiedFeed);
+        }
+        
         const mockResults: QueryResult = {
-          [activeTab]: generateMockData(activeTab, 25),
+          posts: mockPosts,
+          comments: mockComments,
           total: 1250,
           query_time_ms: 450,
           filters_applied: filters
@@ -155,7 +291,7 @@ export default function QueryPage() {
       if (err.response?.status === 404 || err.response?.status === 501) {
         setError('SQL Query API not yet implemented. Showing sample data.');
         const mockResults: QueryResult = {
-          posts: generateMockData('posts', 15),
+          posts: generateMockData('posts', 15) as RedditPost[],
           total: 15,
           query_time_ms: 280,
           filters_applied: {}
@@ -178,36 +314,89 @@ export default function QueryPage() {
     }
   };
 
+  const getItemDate = (item: any) => {
+    return item.created_utc || item.created_at;
+  };
+  
   const generateMockData = (type: 'posts' | 'comments', count: number) => {
     const data = [];
+    const sampleImages = [
+      'https://picsum.photos/800/450?random=1',
+      'https://picsum.photos/800/450?random=2', 
+      'https://picsum.photos/800/450?random=3',
+      null, null // Some posts without images
+    ];
+    
+    const sampleContent = [
+      'This is a comprehensive analysis of the latest developments in machine learning. The field has seen tremendous growth over the past year, with new breakthroughs in natural language processing and computer vision that are reshaping how we think about AI capabilities.',
+      'Check out this amazing project I\'ve been working on! It combines React with some cutting-edge APIs to create something really useful for developers. The learning curve was steep but totally worth it.',
+      'Here\'s my take on the current state of web development. Framework fatigue is real, but there are some genuinely exciting developments happening that make the complexity worthwhile.',
+      'Just discovered this incredible technique that completely changed how I approach problem-solving in my day job. Sharing it here in case it helps anyone else facing similar challenges.',
+      'Long-form discussion about the implications of recent tech industry changes and what they mean for developers, designers, and the broader ecosystem. Lots to unpack here.'
+    ];
+    
     for (let i = 0; i < count; i++) {
       if (type === 'posts') {
+        const hasImage = Math.random() > 0.4;
         data.push({
           id: `post_${i + 1}`,
-          title: `Sample Post Title ${i + 1}`,
-          content: `This is sample post content for demonstration purposes. Post ${i + 1}.`,
-          author: `user${i + 1}`,
-          subreddit: ['technology', 'programming', 'webdev', 'MachineLearning'][i % 4],
-          score: Math.floor(Math.random() * 1000) + 10,
-          upvote_ratio: (Math.random() * 0.3 + 0.7).toFixed(2),
-          num_comments: Math.floor(Math.random() * 100),
+          title: `${['Breaking:', 'Discussion:', 'Show Reddit:', 'Ask Reddit:', 'TIL:'][i % 5]} ${['Breakthrough in AI leads to new possibilities', 'What do you think about this new framework?', 'Built this tool over the weekend', 'How do you handle complex state management?', 'The future of web development looks bright'][i % 5]}`,
+          content: sampleContent[i % sampleContent.length],
+          selftext: sampleContent[i % sampleContent.length],
+          author: `user${Math.floor(Math.random() * 50) + 1}`,
+          subreddit: ['technology', 'programming', 'webdev', 'MachineLearning', 'reactjs'][i % 5],
+          score: Math.floor(Math.random() * 2000) + 50,
+          upvote_ratio: parseFloat((Math.random() * 0.3 + 0.7).toFixed(2)),
+          num_comments: Math.floor(Math.random() * 200) + 5,
           created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
           url: `https://reddit.com/r/sample/post_${i + 1}`,
+          thumbnail: hasImage ? sampleImages[i % sampleImages.length] : null,
+          post_hint: hasImage ? 'image' : 'self',
+          is_video: Math.random() > 0.9,
+          domain: hasImage ? 'i.redd.it' : 'self.programming'
         });
       } else {
         data.push({
           id: `comment_${i + 1}`,
-          content: `This is a sample comment for demonstration. Comment ${i + 1}.`,
-          author: `commenter${i + 1}`,
-          subreddit: ['technology', 'programming', 'webdev', 'MachineLearning'][i % 4],
-          score: Math.floor(Math.random() * 500),
+          content: sampleContent[i % sampleContent.length].substring(0, 200) + '...',
+          author: `commenter${Math.floor(Math.random() * 30) + 1}`,
+          subreddit: ['technology', 'programming', 'webdev', 'MachineLearning', 'reactjs'][i % 5],
+          score: Math.floor(Math.random() * 500) + 1,
           created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-          post_title: `Parent Post ${i + 1}`,
-          depth: Math.floor(Math.random() * 3),
+          post_title: `Parent Post for Comment ${i + 1}`,
+          post_id: `post_${Math.floor(i / 3) + 1}`,
+          depth: Math.floor(Math.random() * 4),
         });
       }
     }
     return data;
+  };
+  
+  const toggleItemExpansion = useCallback((itemId: string) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  }, []);
+  
+  const openMediaViewer = useCallback((url: string, type: string) => {
+    setSelectedMedia({ url, type });
+  }, []);
+  
+  const isValidImageUrl = (url: string | null | undefined): boolean => {
+    if (!url) return false;
+    return url.includes('picsum.photos') || url.includes('i.redd.it') || url.includes('preview.redd.it') || 
+           url.match(/\.(jpg|jpeg|png|gif|webp)$/i) !== null;
+  };
+  
+  const getContentPreview = (content: string | undefined, maxLength: number = 300): string => {
+    if (!content) return '';
+    return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
   };
 
   const exportResults = async () => {
@@ -241,7 +430,7 @@ export default function QueryPage() {
   };
 
   return (
-    <DashboardLayout title="Query Data" description="Search and query collected Reddit data">
+    <DashboardLayout title="Query Data" description="Search and analyze Reddit data with our revolutionary content-rich interface">
       <div className="space-y-6">
         {/* Query Interface */}
         <Tabs value={showAdvanced ? 'sql' : 'filters'} onValueChange={(value) => setShowAdvanced(value === 'sql')}>
@@ -259,13 +448,14 @@ export default function QueryPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Data Type Selection */}
+                {/* View Mode Selection */}
                 <div>
-                  <Label>Data Type</Label>
-                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'posts' | 'comments')}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="posts">Posts</TabsTrigger>
-                      <TabsTrigger value="comments">Comments</TabsTrigger>
+                  <Label>View Mode</Label>
+                  <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'unified' | 'posts' | 'comments')}>
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="unified">Unified Feed</TabsTrigger>
+                      <TabsTrigger value="posts">Posts Only</TabsTrigger>
+                      <TabsTrigger value="comments">Comments Only</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
@@ -304,40 +494,20 @@ export default function QueryPage() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="date_from">Date From</Label>
-                    <Input
-                      id="date_from"
-                      type="date"
-                      value={filters.date_from || ''}
-                      onChange={(e) => handleFilterChange('date_from', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="date_to">Date To</Label>
-                    <Input
-                      id="date_to"
-                      type="date"
-                      value={filters.date_to || ''}
-                      onChange={(e) => handleFilterChange('date_to', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="time_filter">Time Filter</Label>
+                    <Label htmlFor="time_filter">Time Range</Label>
                     <Select
-                      value={filters.time_filter || ''}
-                      onValueChange={(value) => handleFilterChange('time_filter', value || undefined)}
+                      value={filters.time_filter || 'all'}
+                      onValueChange={(value) => handleFilterChange('time_filter', value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select timeframe" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="hour">Last Hour</SelectItem>
-                        <SelectItem value="day">Last Day</SelectItem>
-                        <SelectItem value="week">Last Week</SelectItem>
-                        <SelectItem value="month">Last Month</SelectItem>
-                        <SelectItem value="year">Last Year</SelectItem>
+                        <SelectItem value="hour">Past Hour</SelectItem>
+                        <SelectItem value="day">Past 24 Hours</SelectItem>
+                        <SelectItem value="week">Past Week</SelectItem>
+                        <SelectItem value="month">Past Month</SelectItem>
+                        <SelectItem value="year">Past Year</SelectItem>
                         <SelectItem value="all">All Time</SelectItem>
                       </SelectContent>
                     </Select>
@@ -454,86 +624,306 @@ export default function QueryPage() {
           </div>
         )}
         
-        {results && (
+        {results && feedItems.length > 0 && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Query Results</CardTitle>
                   <CardDescription>
-                    Found {results.total} results in {results.query_time_ms}ms
+                    Found {results.total} results in {results.query_time_ms}ms • Showing {feedItems.length} items
                   </CardDescription>
                 </div>
-                <Button onClick={exportResults} variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={exportResults} variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {(results.posts || results.comments || []).map((item: any, index: number) => (
-                  <div 
-                    key={item.id || index} 
-                    className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => setSelectedItem(item)}
-                  >
-                    {activeTab === 'posts' ? (
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between">
-                          <h3 className="font-medium text-gray-900 pr-4">{item.title}</h3>
-                          <div className="flex items-center gap-2 text-sm text-gray-500 shrink-0">
-                            <Badge variant="outline">r/{item.subreddit}</Badge>
-                            <span>{item.score} pts</span>
+              <div className="space-y-6">
+                {feedItems.map((feedItem: UnifiedFeedItem, index: number) => {
+                  const isExpanded = expandedItems.has(feedItem.data.id);
+                  const isPost = feedItem.type === 'post';
+                  const data = feedItem.data as any;
+                  
+                  return (
+                    <div 
+                      key={feedItem.data.id || index}
+                      className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      {/* Post/Comment Header */}
+                      <div className="p-6 pb-4">
+                        <div className="flex items-start gap-4">
+                          {/* Vote Buttons */}
+                          <div className="flex flex-col items-center gap-1 pt-1">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-orange-50 hover:text-orange-600">
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                            <span className="font-semibold text-sm text-gray-900">
+                              {data.score || 0}
+                            </span>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600">
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            {/* Title for posts */}
+                            {isPost && (
+                              <h3 className="text-lg font-semibold text-gray-900 mb-3 leading-tight">
+                                {(data as RedditPost).title}
+                              </h3>
+                            )}
+                            
+                            {/* Post content or comment text */}
+                            <div className="mb-4">
+                              {isPost ? (
+                                <div>
+                                  {/* Image thumbnail for posts */}
+                                  {isValidImageUrl(data.thumbnail) && (
+                                    <div 
+                                      className="relative mb-4 rounded-lg overflow-hidden cursor-pointer group"
+                                      onClick={() => openMediaViewer(data.thumbnail, 'image')}
+                                    >
+                                      <Image
+                                        src={data.thumbnail}
+                                        alt="Post image"
+                                        width={600}
+                                        height={300}
+                                        className="w-full h-auto max-h-96 object-cover group-hover:scale-105 transition-transform duration-200"
+                                        unoptimized
+                                      />
+                                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
+                                        <Expand className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Post text content */}
+                                  {(data.content || data.selftext) && (
+                                    <div className="prose prose-sm max-w-none">
+                                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                        {isExpanded 
+                                          ? (data.content || data.selftext)
+                                          : getContentPreview(data.content || data.selftext, 400)
+                                        }
+                                      </p>
+                                      {(data.content || data.selftext)?.length > 400 && (
+                                        <Button 
+                                          variant="link" 
+                                          size="sm" 
+                                          className="p-0 h-auto text-orange-600 hover:text-orange-700"
+                                          onClick={() => toggleItemExpansion(data.id)}
+                                        >
+                                          {isExpanded ? 'Show less' : 'Read more'}
+                                        </Button>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* External link preview */}
+                                  {data.domain && data.domain !== 'self.programming' && data.url && (
+                                    <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <LinkIcon className="h-4 w-4" />
+                                        <span className="font-medium">{data.domain}</span>
+                                        <Button 
+                                          variant="link" 
+                                          size="sm" 
+                                          className="p-0 h-auto ml-auto"
+                                          onClick={() => window.open(data.url, '_blank')}
+                                        >
+                                          <ExternalLink className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-orange-200">
+                                  <div className="text-xs text-gray-500 mb-2">
+                                    Reply to: <span className="font-medium">{(data as RedditComment).post_title}</span>
+                                  </div>
+                                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                    {isExpanded 
+                                      ? data.content
+                                      : getContentPreview(data.content, 300)
+                                    }
+                                  </p>
+                                  {data.content?.length > 300 && (
+                                    <Button 
+                                      variant="link" 
+                                      size="sm" 
+                                      className="p-0 h-auto text-orange-600 hover:text-orange-700 mt-2"
+                                      onClick={() => toggleItemExpansion(data.id)}
+                                    >
+                                      {isExpanded ? 'Show less' : 'Read more'}
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Metadata */}
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                              <Badge variant="outline" className="text-orange-600 border-orange-200">
+                                r/{data.subreddit}
+                              </Badge>
+                              <span>u/{data.author}</span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(getItemDate(data))}
+                              </span>
+                              {isPost && (
+                                <>
+                                  <span className="flex items-center gap-1">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {(data as RedditPost).num_comments} comments
+                                  </span>
+                                  <span>
+                                    {Math.round((data as RedditPost).upvote_ratio * 100)}% upvoted
+                                  </span>
+                                </>
+                              )}
+                              {!isPost && (data as RedditComment).depth > 0 && (
+                                <span>Depth: {(data as RedditComment).depth}</span>
+                              )}
+                            </div>
+                            
+                            {/* Comments for posts in unified view */}
+                            {isPost && feedItem.comments && feedItem.comments.length > 0 && (
+                              <div className="mt-6 border-t border-gray-100 pt-4">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="mb-3 text-gray-600 hover:text-gray-900"
+                                  onClick={() => toggleItemExpansion(data.id + '_comments')}
+                                >
+                                  {expandedItems.has(data.id + '_comments') ? (
+                                    <><ChevronUp className="h-4 w-4 mr-1" /> Hide {feedItem.comments.length} comments</>
+                                  ) : (
+                                    <><ChevronDown className="h-4 w-4 mr-1" /> Show {feedItem.comments.length} comments</>
+                                  )}
+                                </Button>
+                                
+                                {expandedItems.has(data.id + '_comments') && (
+                                  <div className="space-y-3">
+                                    {feedItem.comments.slice(0, 5).map((comment: RedditComment) => (
+                                      <div key={comment.id} className="bg-gray-50 rounded-lg p-4 border-l-2 border-gray-200">
+                                        <div className="flex items-start gap-3">
+                                          <div className="flex flex-col items-center gap-1">
+                                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                              <ArrowUp className="h-3 w-3" />
+                                            </Button>
+                                            <span className="text-xs font-medium">{comment.score}</span>
+                                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                              <ArrowDown className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+                                              <span className="font-medium">u/{comment.author}</span>
+                                              <span>{formatDate(getItemDate(comment))}</span>
+                                            </div>
+                                            <p className="text-sm text-gray-700 leading-relaxed">
+                                              {getContentPreview(comment.content, 200)}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {feedItem.comments.length > 5 && (
+                                      <div className="text-center">
+                                        <Button variant="outline" size="sm">
+                                          View all {feedItem.comments.length} comments
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => copyToClipboard(data.content || data.selftext || data.title)}
+                              >
+                                <Copy className="h-4 w-4 mr-2" />
+                                Copy
+                              </Button>
+                              
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setSelectedItem(data)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Details
+                              </Button>
+                              
+                              {data.url && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => openRedditLink(data.url)}
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  Reddit
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <p className="text-gray-600 text-sm line-clamp-2">{item.content}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>by u/{item.author}</span>
-                          <span className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            {item.num_comments} comments
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(item.created_at)}
-                          </span>
-                          <span>{(parseFloat(item.upvote_ratio) * 100).toFixed(0)}% upvoted</span>
-                        </div>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between">
-                          <p className="text-gray-900 pr-4">{item.content}</p>
-                          <div className="flex items-center gap-2 text-sm text-gray-500 shrink-0">
-                            <Badge variant="outline">r/{item.subreddit}</Badge>
-                            <span>{item.score} pts</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>by u/{item.author}</span>
-                          <span>in "{item.post_title}"</span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(item.created_at)}
-                          </span>
-                          <span>depth: {item.depth}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
               
-              {results.total > (results.posts?.length || results.comments?.length || 0) && (
-                <div className="mt-4 text-center text-sm text-gray-500">
-                  Showing {results.posts?.length || results.comments?.length || 0} of {results.total} results
+              {results.total > feedItems.length && (
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-500 mb-4">
+                    Showing {feedItems.length} of {results.total} results
+                  </p>
+                  <Button variant="outline" size="lg">
+                    Load More Results
+                  </Button>
                 </div>
               )}
             </CardContent>
           </Card>
         )}
 
+        {/* Media Viewer Modal */}
+        <Dialog open={!!selectedMedia} onOpenChange={(open) => !open && setSelectedMedia(null)}>
+          <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden">
+            {selectedMedia && (
+              <div className="relative">
+                <DialogHeader className="pb-4">
+                  <DialogTitle>Media Viewer</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
+                  <Image
+                    src={selectedMedia.url}
+                    alt="Full size media"
+                    width={1200}
+                    height={800}
+                    className="max-w-full max-h-[70vh] object-contain"
+                    unoptimized
+                  />
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+        
         {/* Item Detail Modal */}
         <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -541,11 +931,11 @@ export default function QueryPage() {
               <>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <Badge variant="outline">r/{selectedItem.subreddit}</Badge>
-                    {activeTab === 'posts' ? selectedItem.title : 'Comment Details'}
+                    <Badge variant="outline" className="text-orange-600 border-orange-200">r/{selectedItem.subreddit}</Badge>
+                    {'title' in selectedItem ? selectedItem.title : 'Comment Details'}
                   </DialogTitle>
                   <DialogDescription>
-                    by u/{selectedItem.author} • {formatDate(selectedItem.created_at)}
+                    by u/{selectedItem.author} • {formatDate(getItemDate(selectedItem))}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -554,51 +944,68 @@ export default function QueryPage() {
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Content</h4>
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-gray-700 whitespace-pre-wrap">
-                        {activeTab === 'posts' ? selectedItem.content : selectedItem.content}
+                      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        {selectedItem.content || (selectedItem as any).selftext || (selectedItem as any).title}
                       </p>
                     </div>
                   </div>
 
+                  {/* Image if available */}
+                  {isValidImageUrl((selectedItem as any).thumbnail) && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Media</h4>
+                      <div className="relative rounded-lg overflow-hidden">
+                        <Image
+                          src={(selectedItem as any).thumbnail}
+                          alt="Post image"
+                          width={600}
+                          height={400}
+                          className="w-full h-auto object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Statistics */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2">
-                        <ThumbsUp className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-900">Score</span>
+                    <div className="bg-orange-50 rounded-lg p-4 border border-orange-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ThumbsUp className="h-5 w-5 text-orange-600" />
+                        <span className="text-sm font-medium text-orange-900">Score</span>
                       </div>
-                      <p className="text-lg font-semibold text-blue-700">{selectedItem.score || 0}</p>
+                      <p className="text-2xl font-bold text-orange-700">{selectedItem.score || 0}</p>
                     </div>
                     
-                    {activeTab === 'posts' && (
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium text-green-900">Comments</span>
+                    {'num_comments' in selectedItem && (
+                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MessageSquare className="h-5 w-5 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">Comments</span>
                         </div>
-                        <p className="text-lg font-semibold text-green-700">{selectedItem.num_comments || 0}</p>
+                        <p className="text-2xl font-bold text-blue-700">{selectedItem.num_comments || 0}</p>
                       </div>
                     )}
                     
-                    {selectedItem.upvote_ratio && (
-                      <div className="bg-purple-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-purple-600" />
-                          <span className="text-sm font-medium text-purple-900">Upvote %</span>
+                    {(selectedItem as any).upvote_ratio && (
+                      <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className="h-5 w-5 text-green-600" />
+                          <span className="text-sm font-medium text-green-900">Upvote %</span>
                         </div>
-                        <p className="text-lg font-semibold text-purple-700">
-                          {(parseFloat(selectedItem.upvote_ratio) * 100).toFixed(0)}%
+                        <p className="text-2xl font-bold text-green-700">
+                          {Math.round((selectedItem as any).upvote_ratio * 100)}%
                         </p>
                       </div>
                     )}
                     
-                    {activeTab === 'comments' && selectedItem.depth !== undefined && (
-                      <div className="bg-orange-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-orange-600" />
-                          <span className="text-sm font-medium text-orange-900">Depth</span>
+                    {'depth' in selectedItem && (selectedItem as any).depth !== undefined && (
+                      <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="h-5 w-5 text-purple-600" />
+                          <span className="text-sm font-medium text-purple-900">Depth</span>
                         </div>
-                        <p className="text-lg font-semibold text-orange-700">{selectedItem.depth}</p>
+                        <p className="text-2xl font-bold text-purple-700">{(selectedItem as any).depth}</p>
                       </div>
                     )}
                   </div>
@@ -606,48 +1013,48 @@ export default function QueryPage() {
                   {/* Metadata */}
                   <div>
                     <h4 className="font-medium text-gray-900 mb-3">Metadata</h4>
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">ID:</span>
-                        <span className="font-mono text-gray-900">{selectedItem.id}</span>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                        <span className="text-gray-600 font-medium">ID:</span>
+                        <span className="font-mono text-gray-900 bg-white px-2 py-1 rounded">{selectedItem.id}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Author:</span>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                        <span className="text-gray-600 font-medium">Author:</span>
                         <span className="text-gray-900">u/{selectedItem.author}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Subreddit:</span>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                        <span className="text-gray-600 font-medium">Subreddit:</span>
                         <span className="text-gray-900">r/{selectedItem.subreddit}</span>
                       </div>
-                      {activeTab === 'comments' && selectedItem.post_title && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Post:</span>
-                          <span className="text-gray-900 truncate max-w-xs">{selectedItem.post_title}</span>
+                      {'post_title' in selectedItem && (selectedItem as any).post_title && (
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                          <span className="text-gray-600 font-medium">Post:</span>
+                          <span className="text-gray-900 text-right max-w-xs truncate">{(selectedItem as any).post_title}</span>
                         </div>
                       )}
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Created:</span>
-                        <span className="text-gray-900">{formatDate(selectedItem.created_at)}</span>
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-gray-600 font-medium">Created:</span>
+                        <span className="text-gray-900">{formatDate(getItemDate(selectedItem))}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <Button
-                      onClick={() => copyToClipboard(selectedItem.content)}
+                      onClick={() => copyToClipboard(selectedItem.content || (selectedItem as any).selftext || (selectedItem as any).title)}
                       variant="outline"
-                      size="sm"
+                      className="flex-1"
                     >
                       <Copy className="mr-2 h-4 w-4" />
                       Copy Content
                     </Button>
                     
-                    {selectedItem.url && (
+                    {(selectedItem as any).url && (
                       <Button
-                        onClick={() => openRedditLink(selectedItem.url)}
+                        onClick={() => openRedditLink((selectedItem as any).url)}
                         variant="outline"
-                        size="sm"
+                        className="flex-1"
                       >
                         <ExternalLink className="mr-2 h-4 w-4" />
                         View on Reddit
