@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { format } from 'date-fns';
+import { ScenarioResults } from '@/components/scenarios/ScenarioResults';
 
 interface ScenarioDefinition {
   id: string;
@@ -41,6 +42,7 @@ export default function ScenariosPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const scenarios: ScenarioDefinition[] = [
     {
@@ -156,6 +158,7 @@ export default function ScenariosPage() {
     setParameters(scenario.parameterTemplate);
     setResults(null);
     setError(null);
+    setIsDialogOpen(true);
   };
 
   const runScenario = async () => {
@@ -167,6 +170,8 @@ export default function ScenariosPage() {
       
       const result = await selectedScenario.runFunction(parameters);
       setResults(result);
+      // Close dialog to show results cleanly in separate card
+      setIsDialogOpen(false);
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Failed to run scenario');
     } finally {
@@ -301,7 +306,13 @@ export default function ScenariosPage() {
       </div>
 
       {/* Scenario Configuration Dialog */}
-      <Dialog open={!!selectedScenario} onOpenChange={(open) => !open && setSelectedScenario(null)}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open);
+        if (!open) {
+          // Don't clear selectedScenario immediately - we need it for results header
+          // Only clear it when results are cleared
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedScenario && (
             <>
@@ -369,22 +380,45 @@ export default function ScenariosPage() {
                   </div>
                 )}
 
-                {/* Results */}
-                {results && (
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Results</h3>
-                    <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                      <pre className="text-sm whitespace-pre-wrap">
-                        {JSON.stringify(results, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
-                )}
               </div>
             </>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Results Display - Separate Card */}
+      {results && (
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {selectedScenario?.icon}
+                  <div>
+                    <CardTitle>Scenario Results: {selectedScenario?.name}</CardTitle>
+                    <CardDescription>
+                      {results.description}
+                    </CardDescription>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setResults(null);
+                    setSelectedScenario(null);
+                  }}
+                >
+                  Close Results
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScenarioResults results={results} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

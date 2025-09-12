@@ -24,51 +24,57 @@ export class TrenditAPI {
   private pendingRequests: Map<string, Promise<any>> = new Map();
 
   constructor(baseURL?: string) {
-    const apiUrl = baseURL || getApiUrl();
-    
-    this.client = axios.create({
-      baseURL: apiUrl,
-      timeout: 30000, // Increased to 30 seconds for slow backend responses
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const apiUrl = baseURL || getApiUrl();
+      
+      this.client = axios.create({
+        baseURL: apiUrl,
+        timeout: 30000, // Increased to 30 seconds for slow backend responses
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-    // Log the API URL for debugging
-    if (config.app.debug) {
-      console.log(`🔗 Trendit API connected to: ${apiUrl}`);
-    }
-
-    // Add request interceptor to include auth token
-    this.client.interceptors.request.use((config) => {
-      if (this.token) {
-        config.headers.Authorization = `Bearer ${this.token}`;
+      // Log the API URL for debugging
+      if (config.app.debug) {
+        console.log(`🔗 Trendit API connected to: ${apiUrl}`);
       }
-      return config;
-    });
 
-    // Add response interceptor for error handling
-    this.client.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Handle unauthorized - clear token and redirect to login
-          this.clearToken();
-          if (typeof window !== 'undefined') {
-            window.location.href = '/auth/login';
+      // Add request interceptor to include auth token
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+
+      // Add response interceptor for error handling
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            // Handle unauthorized - clear token and redirect to login
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
           }
+          
+          if (error.response?.status === 429) {
+            // Handle rate limit - log warning and implement exponential backoff
+            console.warn('⚠️ API rate limit exceeded. Implementing backoff strategy.');
+            const retryAfter = error.response.headers['retry-after'] || 5;
+            console.warn(`Rate limit hit. Retry after ${retryAfter} seconds.`);
+          }
+          
+          return Promise.reject(error);
         }
-        
-        if (error.response?.status === 429) {
-          // Handle rate limit - log warning and implement exponential backoff
-          console.warn('⚠️ API rate limit exceeded. Implementing backoff strategy.');
-          const retryAfter = error.response.headers['retry-after'] || 5;
-          console.warn(`Rate limit hit. Retry after ${retryAfter} seconds.`);
-        }
-        
-        return Promise.reject(error);
-      }
-    );
+      );
+
+    } catch (error) {
+      console.error('API Client Constructor Error:', error);
+      throw error;
+    }
   }
 
   setToken(token: string) {
@@ -289,8 +295,66 @@ export class TrenditAPI {
     sort_order?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
+    exclude_deleted?: boolean;
   }): Promise<any> {
-    const response = await this.client.post('/api/data/posts', params);
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
+    // Always include exclude_deleted: false and ensure required fields for Query API
+    const queryParams = {
+      ...params,
+      exclude_deleted: params.exclude_deleted ?? false,
+      // Query API requires subreddits field - default to empty array if not provided
+      subreddits: params.subreddits || []
+    };
+    
+    // Debug: Log authentication details
+    console.log('🔍 API Client Debug - Posts Query:');
+    console.log('  Token:', this.token ? `${this.token.slice(0, 10)}...` : 'NO TOKEN');
+    console.log('  Base URL:', this.client.defaults.baseURL);
+    console.log('  Query Params (full):', JSON.stringify(queryParams, null, 2));
+    
+    const response = await this.client.post('/api/query/posts', queryParams);
     return response.data;
   }
 
@@ -306,8 +370,59 @@ export class TrenditAPI {
     sort_order?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
+    exclude_deleted?: boolean;
   }): Promise<any> {
-    const response = await this.client.post('/api/data/comments', params);
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
+    // Always include exclude_deleted: false and ensure required fields for Query API
+    const queryParams = {
+      ...params,
+      exclude_deleted: params.exclude_deleted ?? false,
+      // Query API requires subreddits field - default to empty array if not provided
+      subreddits: params.subreddits || []
+    };
+    const response = await this.client.post('/api/query/comments', queryParams);
     return response.data;
   }
 
@@ -436,6 +551,49 @@ export class TrenditAPI {
 
   // Scenarios
   async getScenarioExamples(): Promise<any> {
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
     const response = await this.client.get('/api/scenarios/examples');
     return response.data;
   }
@@ -448,6 +606,49 @@ export class TrenditAPI {
     limit?: number;
     sort_by?: string;
   }): Promise<any> {
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
     const queryParams = new URLSearchParams(params as any);
     const response = await this.client.get(`/api/scenarios/1/subreddit-keyword-search?${queryParams}`);
     return response.data;
@@ -458,6 +659,49 @@ export class TrenditAPI {
     timeframe?: string;
     limit?: number;
   }): Promise<any> {
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
     const queryParams = new URLSearchParams(params as any);
     const response = await this.client.get(`/api/scenarios/2/trending-multi-subreddits?${queryParams}`);
     return response.data;
@@ -468,6 +712,49 @@ export class TrenditAPI {
     time_filter?: string;
     limit?: number;
   }): Promise<any> {
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
     const queryParams = new URLSearchParams(params as any);
     const response = await this.client.get(`/api/scenarios/3/top-posts-all?${queryParams}`);
     return response.data;
@@ -477,6 +764,49 @@ export class TrenditAPI {
     subreddit: string;
     metric?: string;
   }): Promise<any> {
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
     const queryParams = new URLSearchParams(params as any);
     const response = await this.client.get(`/api/scenarios/4/most-popular-today?${queryParams}`);
     return response.data;
@@ -489,6 +819,49 @@ export class TrenditAPI {
     min_score?: number;
     limit?: number;
   }): Promise<any> {
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
     const queryParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -505,6 +878,49 @@ export class TrenditAPI {
     limit?: number;
     metric?: string;
   }): Promise<any> {
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('API client not initialized. Attempting to reinitialize...');
+      
+      // Load token from storage if available
+      if (typeof window !== 'undefined' && !this.token) {
+        const storedToken = localStorage.getItem('trendit_token');
+        if (storedToken) {
+          this.token = storedToken;
+          console.log('Token loaded from storage for reinitialization');
+        }
+      }
+      
+      this.client = axios.create({
+        baseURL: getApiUrl(),
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Reapply interceptors
+      this.client.interceptors.request.use((config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      });
+      
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }
+          return Promise.reject(error);
+        }
+      );
+    }
+    
     const queryParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
