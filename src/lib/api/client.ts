@@ -229,7 +229,7 @@ export class TrenditAPI {
   // Collection Jobs
   async createJob(jobData: CollectionJobRequest): Promise<CollectionJobResponse> {
     const response: AxiosResponse<CollectionJobResponse> = await this.client.post(
-      '/api/collect/jobs',
+      '/api/datastore/jobs',
       jobData
     );
     return response.data;
@@ -237,7 +237,7 @@ export class TrenditAPI {
 
   async getJob(jobId: string): Promise<CollectionJobResponse> {
     const response: AxiosResponse<CollectionJobResponse> = await this.client.get(
-      `/api/collect/jobs/${jobId}`
+      `/api/datastore/jobs/${jobId}`
     );
     return response.data;
   }
@@ -251,31 +251,31 @@ export class TrenditAPI {
     const cacheKey = `jobs_list_${JSON.stringify(params || {})}`;
     
     return this.cachedGet<CollectionJobListResponse>(
-      '/api/collect/jobs' + (params ? '?' + new URLSearchParams(params as any).toString() : ''),
+      '/api/datastore/jobs' + (params ? '?' + new URLSearchParams(params as any).toString() : ''),
       cacheKey,
       30000 // 30 seconds cache for jobs list
     );
   }
 
   async cancelJob(jobId: string): Promise<void> {
-    await this.client.post(`/api/collect/jobs/${jobId}/cancel`);
+    await this.client.post(`/api/datastore/jobs/${jobId}/cancel`);
   }
 
   async deleteJob(jobId: string): Promise<void> {
-    await this.client.delete(`/api/collect/jobs/${jobId}`);
+    await this.client.delete(`/api/datastore/jobs/${jobId}`);
   }
 
   // Analytics
   async getJobAnalytics(jobId: string): Promise<PostAnalyticsResponse> {
     const response: AxiosResponse<PostAnalyticsResponse> = await this.client.get(
-      `/api/data/analytics/${jobId}`
+      `/api/databrowser/analytics/${jobId}`
     );
     return response.data;
   }
 
   async getDataSummary(): Promise<DataSummary> {
     return this.cachedGet<DataSummary>(
-      '/api/data/summary',
+      '/api/databrowser/summary',
       'data_summary',
       120000 // 2 minutes cache
     );
@@ -354,7 +354,7 @@ export class TrenditAPI {
     console.log('  Base URL:', this.client.defaults.baseURL);
     console.log('  Query Params (full):', JSON.stringify(queryParams, null, 2));
     
-    const response = await this.client.post('/api/query/posts', queryParams);
+    const response = await this.client.post('/api/datastream/posts', queryParams);
     return response.data;
   }
 
@@ -422,7 +422,7 @@ export class TrenditAPI {
       // Query API requires subreddits field - default to empty array if not provided
       subreddits: params.subreddits || []
     };
-    const response = await this.client.post('/api/query/comments', queryParams);
+    const response = await this.client.post('/api/datastream/comments', queryParams);
     return response.data;
   }
 
@@ -438,7 +438,7 @@ export class TrenditAPI {
         queryParams.append(key, String(value));
       }
     });
-    const response = await this.client.get(`/api/data/posts/recent?${queryParams}`);
+    const response = await this.client.get(`/api/databrowser/posts/recent?${queryParams}`);
     return response.data;
   }
 
@@ -453,13 +453,13 @@ export class TrenditAPI {
         queryParams.append(key, String(value));
       }
     });
-    const response = await this.client.get(`/api/data/posts/top?${queryParams}`);
+    const response = await this.client.get(`/api/databrowser/posts/top?${queryParams}`);
     return response.data;
   }
 
   // SQL endpoint doesn't exist in OpenAPI spec, so this will gracefully fail
   async executeSQL(query: string): Promise<any> {
-    const response = await this.client.post('/api/query/sql', { query });
+    const response = await this.client.post('/api/datastream/sql', { query });
     return response.data;
   }
 
