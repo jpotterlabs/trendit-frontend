@@ -116,6 +116,11 @@ export default function QueryPage() {
   const [sqlQuery, setSqlQuery] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  
+  // Pagination state
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreResults, setHasMoreResults] = useState(false);
 
   const handleFilterChange = (key: keyof QueryFilters, value: any) => {
     setFilters(prev => ({
@@ -163,13 +168,23 @@ export default function QueryPage() {
     });
   };
 
-  const runQuery = async () => {
+  const runQuery = async (isLoadMore = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+        setCurrentOffset(0); // Reset pagination for new queries
+        setHasMoreResults(false);
+      }
       setError(null);
       
-      console.log('🔍 Query Filters being sent:', JSON.stringify(filters, null, 2));
+      const queryOffset = isLoadMore ? currentOffset + (filters.limit || 50) : 0;
+      const paginatedFilters = { ...filters, offset: queryOffset };
+      
+      console.log('🔍 Query Filters being sent:', JSON.stringify(paginatedFilters, null, 2));
       console.log('🔍 View Mode:', viewMode);
+      console.log('🔍 Is Load More:', isLoadMore, 'Offset:', queryOffset);
       
       let postsData: RedditPost[] = [];
       let commentsData: RedditComment[] = [];
@@ -179,7 +194,7 @@ export default function QueryPage() {
         // For unified view, fetch both posts and comments
         if (viewMode === 'unified' || viewMode === 'posts') {
           console.log('🔍 Fetching posts...');
-          const postsResponse = await api.queryPosts(filters);
+          const postsResponse = await api.queryPosts(paginatedFilters);
           const postsArray = postsResponse.data || postsResponse.posts || postsResponse.results || postsResponse;
           postsData = Array.isArray(postsArray) ? postsArray : [];
           apiResponse = postsResponse;
@@ -187,7 +202,7 @@ export default function QueryPage() {
         
         if (viewMode === 'unified' || viewMode === 'comments') {
           console.log('🔍 Fetching comments...');
-          const commentsResponse = await api.queryComments(filters);
+          const commentsResponse = await api.queryComments(paginatedFilters);
           const commentsArray = commentsResponse.data || commentsResponse.comments || commentsResponse.results || commentsResponse;
           commentsData = Array.isArray(commentsArray) ? commentsArray : [];
           if (viewMode === 'comments') apiResponse = commentsResponse;
@@ -201,17 +216,33 @@ export default function QueryPage() {
       
       // Create unified feed or separate results
       if (viewMode === 'unified') {
-        const unifiedFeed = createUnifiedFeed(postsData, commentsData);
-        setFeedItems(unifiedFeed);
+        const newUnifiedFeed = createUnifiedFeed(postsData, commentsData);
+        if (isLoadMore) {
+          setFeedItems(prev => [...prev, ...newUnifiedFeed]);
+        } else {
+          setFeedItems(newUnifiedFeed);
+        }
       } else {
         const feedData = viewMode === 'posts' ? postsData : commentsData;
-        const unifiedFeed = feedData.map(item => ({
+        const newUnifiedFeed = feedData.map(item => ({
           type: viewMode.slice(0, -1) as 'post' | 'comment',
           data: item,
           expanded: false,
           comments: viewMode === 'posts' ? [] : undefined
         }));
-        setFeedItems(unifiedFeed);
+        if (isLoadMore) {
+          setFeedItems(prev => [...prev, ...newUnifiedFeed]);
+        } else {
+          setFeedItems(newUnifiedFeed);
+        }
+      }
+      
+      // Update pagination state
+      const receivedItems = postsData.length + commentsData.length;
+      const requestedLimit = filters.limit || 50;
+      setHasMoreResults(receivedItems === requestedLimit);
+      if (isLoadMore) {
+        setCurrentOffset(prev => prev + requestedLimit);
       }
       
       const results: QueryResult = {
@@ -259,6 +290,17 @@ export default function QueryPage() {
       }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreResults = async () => {
+    if (loadingMore || !hasMoreResults) return;
+    
+    try {
+      await runQuery(true); // true indicates this is a "load more" request
+    } catch (error) {
+      console.error('Load more failed:', error);
     }
   };
 
@@ -912,13 +954,25 @@ export default function QueryPage() {
                 })}
               </div>
               
-              {results.total > feedItems.length && (
+              {hasMoreResults && (
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-500 mb-4">
-                    Showing {feedItems.length} of {results.total} results
+                    Showing {feedItems.length} of {results?.total || 0} results
                   </p>
-                  <Button variant="outline" size="lg">
-                    Load More Results
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={loadMoreResults}
+                    disabled={loadingMore || loading}
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading More...
+                      </>
+                    ) : (
+                      'Load More Results'
+                    )}
                   </Button>
                 </div>
               )}
