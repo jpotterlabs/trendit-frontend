@@ -629,7 +629,7 @@ export default function QueryPage() {
                   </div>
                 </div>
                 
-                <Button onClick={runQuery} disabled={loading} className="bg-orange-600 hover:bg-orange-700">
+                <Button onClick={() => runQuery()} disabled={loading} className="bg-orange-600 hover:bg-orange-700">
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
