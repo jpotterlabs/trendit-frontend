@@ -388,10 +388,36 @@ export default function QueryPage() {
     setSelectedMedia({ url, type });
   }, []);
   
+  // Allowed image domains (must match next.config.ts)
+  const ALLOWED_IMAGE_DOMAINS = [
+    'picsum.photos',
+    'i.redd.it', 
+    'preview.redd.it',
+    'external-preview.redd.it',
+    'i.imgur.com',
+    'imgur.com'
+  ];
+
   const isValidImageUrl = (url: string | null | undefined): boolean => {
-    if (!url) return false;
-    return url.includes('picsum.photos') || url.includes('i.redd.it') || url.includes('preview.redd.it') || 
-           url.match(/\.(jpg|jpeg|png|gif|webp)$/i) !== null;
+    if (!url || typeof url !== 'string') return false;
+    
+    try {
+      const parsedUrl = new URL(url);
+      const hostname = parsedUrl.hostname.toLowerCase();
+      
+      // Check if hostname is in allowed list
+      const isAllowedDomain = ALLOWED_IMAGE_DOMAINS.some(domain => 
+        hostname === domain || hostname.endsWith(`.${domain}`)
+      );
+      
+      // Additional check for common image file extensions
+      const hasImageExtension = /\.(jpg|jpeg|png|gif|webp)$/i.test(parsedUrl.pathname);
+      
+      return isAllowedDomain && (hasImageExtension || hostname.includes('redd.it') || hostname.includes('picsum'));
+    } catch {
+      // Invalid URL
+      return false;
+    }
   };
   
   const getContentPreview = (content: string | undefined, maxLength: number = 300): string => {
@@ -695,7 +721,6 @@ export default function QueryPage() {
                                         width={600}
                                         height={300}
                                         className="w-full h-auto max-h-96 object-cover group-hover:scale-105 transition-transform duration-200"
-                                        unoptimized
                                       />
                                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
                                         <Expand className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
@@ -916,7 +941,6 @@ export default function QueryPage() {
                     width={1200}
                     height={800}
                     className="max-w-full max-h-[70vh] object-contain"
-                    unoptimized
                   />
                 </div>
               </div>
@@ -961,7 +985,6 @@ export default function QueryPage() {
                           width={600}
                           height={400}
                           className="w-full h-auto object-cover"
-                          unoptimized
                         />
                       </div>
                     </div>
