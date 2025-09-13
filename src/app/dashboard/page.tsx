@@ -90,141 +90,180 @@ export default function DashboardPage() {
 
           {/* Premium Actions & Info Panel */}
           <div className="space-y-6 animate-slide-in-right">
-            {/* Revolutionary Quick Actions */}
-            <Card className="card-premium gradient-data border-0 shadow-medium overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-sapphire-500/5 via-violet-500/5 to-emerald-500/5" />
-              <CardHeader className="relative">
-                <CardTitle className="text-lg font-bold text-gradient-primary flex items-center">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sapphire-500 to-violet-500 flex items-center justify-center mr-3">
-                    <Zap className="h-4 w-4 text-white" />
-                  </div>
+            {/* Clean Quick Actions */}
+            <Card className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 relative">
-                <Button className="w-full justify-start bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0 shadow-glow-emerald transition-all duration-300 hover:scale-[1.02]" asChild>
+              <CardContent className="space-y-2">
+                <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white border-0 h-auto py-3 px-4" asChild>
                   <Link href="/dashboard/jobs/new">
-                    <Plus className="mr-3 h-4 w-4" />
-                    <div className="text-left">
-                      <div className="font-semibold">Create Collection Job</div>
-                      <div className="text-xs opacity-90">Start gathering Reddit data</div>
+                    <Plus className="mr-3 h-4 w-4 flex-shrink-0" />
+                    <div className="text-left flex-1">
+                      <div className="font-medium text-sm">Create Collection Job</div>
+                      <div className="text-xs text-blue-100">Start gathering Reddit data</div>
                     </div>
                   </Link>
                 </Button>
-                <Button className="w-full justify-start bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 shadow-glow-sapphire transition-all duration-300 hover:scale-[1.02]" asChild>
+                <Button className="w-full justify-start bg-emerald-600 hover:bg-emerald-700 text-white border-0 h-auto py-3 px-4" asChild>
                   <Link href="/dashboard/analytics">
-                    <BarChart3 className="mr-3 h-4 w-4" />
-                    <div className="text-left">
-                      <div className="font-semibold">View Analytics</div>
-                      <div className="text-xs opacity-90">Explore data insights</div>
+                    <BarChart3 className="mr-3 h-4 w-4 flex-shrink-0" />
+                    <div className="text-left flex-1">
+                      <div className="font-medium text-sm">View Analytics</div>
+                      <div className="text-xs text-emerald-100">Explore data insights</div>
                     </div>
                   </Link>
                 </Button>
-                <Button className="w-full justify-start bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white border-0 shadow-glow-violet transition-all duration-300 hover:scale-[1.02]" asChild>
+                <Button className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white border-0 h-auto py-3 px-4" asChild>
                   <Link href="/dashboard/export">
-                    <Download className="mr-3 h-4 w-4" />
-                    <div className="text-left">
-                      <div className="font-semibold">Export Data</div>
-                      <div className="text-xs opacity-90">Download your reports</div>
+                    <Download className="mr-3 h-4 w-4 flex-shrink-0" />
+                    <div className="text-left flex-1">
+                      <div className="font-medium text-sm">Export Data</div>
+                      <div className="text-xs text-purple-100">Download your reports</div>
                     </div>
                   </Link>
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Premium Subscription Info */}
-            {subscription && (
-              <Card className="card-premium border-0 shadow-medium overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/5" />
-                <CardHeader className="relative">
-                  <CardTitle className="text-lg font-bold flex items-center">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mr-3">
-                      <Activity className="h-4 w-4 text-white" />
-                    </div>
-                    Usage Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 relative">
+            {/* Enhanced Usage Overview */}
+            <Card className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all duration-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  Usage Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {subscription ? (
                   <div className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm font-medium">
-                        <span className="text-foreground">API Calls</span>
-                        <span className="text-muted-foreground">
-                          {subscription.current_usage.api_calls || 0} / {subscription.limits.api_calls || 0}
-                        </span>
+                    {/* API Calls Usage */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">API Calls</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {subscription.current_usage?.api_calls || 0} / {subscription.limits?.api_calls || 'Unlimited'}
+                          </span>
+                          <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                            {subscription.usage_percentage?.api_calls || 0}%
+                          </span>
+                        </div>
                       </div>
-                      <div className="relative">
-                        <Progress 
-                          value={subscription.usage_percentage.api_calls || 0} 
-                          className="h-3 bg-muted"
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(subscription.usage_percentage?.api_calls || 0, 100)}%` }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-sapphire-500 to-violet-500 rounded-full opacity-80" 
-                             style={{ width: `${Math.min(subscription.usage_percentage.api_calls || 0, 100)}%` }} />
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm font-medium">
-                        <span className="text-foreground">Exports</span>
-                        <span className="text-muted-foreground">
-                          {subscription.current_usage.exports || 0} / {subscription.limits.exports || 0}
-                        </span>
+                    {/* Export Usage */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Exports</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {subscription.current_usage?.exports || 0} / {subscription.limits?.exports || 'Unlimited'}
+                          </span>
+                          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                            {subscription.usage_percentage?.exports || 0}%
+                          </span>
+                        </div>
                       </div>
-                      <div className="relative">
-                        <Progress 
-                          value={subscription.usage_percentage.exports || 0} 
-                          className="h-3 bg-muted"
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+                        <div 
+                          className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(subscription.usage_percentage?.exports || 0, 100)}%` }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full opacity-80" 
-                             style={{ width: `${Math.min(subscription.usage_percentage.exports || 0, 100)}%` }} />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-4 border-t border-gray-300 dark:border-gray-600">
-                    <Button variant="outline" size="sm" className="w-full border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all duration-300" asChild>
-                      <Link href="/dashboard/billing">
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Manage Subscription
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                    {/* Sentiment Analysis Usage */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Sentiment Analysis</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {subscription.current_usage?.sentiment_analysis || 0} / {subscription.limits?.sentiment_analysis || 'Unlimited'}
+                          </span>
+                          <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                            {subscription.usage_percentage?.sentiment_analysis || 0}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+                        <div 
+                          className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(subscription.usage_percentage?.sentiment_analysis || 0, 100)}%` }}
+                        />
+                      </div>
+                    </div>
 
-            {/* Revolutionary Getting Started */}
+                    {/* Plan Info */}
+                    <div className="pt-3 mt-4 border-t border-slate-200 dark:border-slate-700">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                          {subscription.tier || 'Free'} Plan
+                        </span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          ${subscription.price_per_month || 0}/mo
+                        </span>
+                      </div>
+                      <Button variant="outline" size="sm" className="w-full text-xs" asChild>
+                        <Link href="/dashboard/billing">
+                          <CreditCard className="mr-1.5 h-3 w-3" />
+                          Manage Subscription
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Activity className="h-6 w-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">Loading usage data...</p>
+                    <div className="flex justify-center">
+                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Clean Getting Started */}
             {jobs.length === 0 && (
-              <Card className="card-premium border-0 shadow-strong overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-cyan-500/10 to-blue-500/10" />
-                <CardHeader className="relative">
-                  <CardTitle className="text-lg font-bold text-gradient-data flex items-center">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center mr-3">
-                      <TrendingUp className="h-4 w-4 text-white" />
-                    </div>
+              <Card className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                     Getting Started
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="relative">
+                <CardContent>
                   <div className="space-y-4">
-                    <p className="text-muted-foreground font-medium">Welcome to Trendit! Transform your Reddit data analysis:</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Welcome to Trendit! Transform your Reddit data analysis:</p>
                     <div className="space-y-3">
                       {[
-                        { icon: Plus, text: "Create your first collection job", color: "from-emerald-500 to-teal-500" },
-                        { icon: Activity, text: "Monitor collection progress", color: "from-sapphire-500 to-violet-500" },
-                        { icon: BarChart3, text: "Analyze your collected data", color: "from-violet-500 to-purple-500" },
-                        { icon: Download, text: "Export insights and reports", color: "from-amber-500 to-orange-500" }
+                        { icon: Plus, text: "Create your first collection job", color: "bg-blue-100 text-blue-600" },
+                        { icon: Activity, text: "Monitor collection progress", color: "bg-emerald-100 text-emerald-600" },
+                        { icon: BarChart3, text: "Analyze your collected data", color: "bg-purple-100 text-purple-600" },
+                        { icon: Download, text: "Export insights and reports", color: "bg-orange-100 text-orange-600" }
                       ].map((step, index) => (
-                        <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-accent/30 transition-all duration-200">
-                          <div className={`w-6 h-6 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center flex-shrink-0`}>
-                            <step.icon className="h-3 w-3 text-white" />
+                        <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200">
+                          <div className={`w-6 h-6 rounded-full ${step.color} dark:bg-slate-700 dark:text-slate-300 flex items-center justify-center flex-shrink-0`}>
+                            <step.icon className="h-3 w-3" />
                           </div>
-                          <span className="text-sm font-medium text-foreground">{step.text}</span>
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{step.text}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <Button className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white shadow-glow-emerald transition-all duration-300 hover:scale-[1.02]" asChild>
+                  <Button className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white" asChild>
                     <Link href="/dashboard/jobs/new">
                       <TrendingUp className="mr-2 h-4 w-4" />
                       Start First Collection
