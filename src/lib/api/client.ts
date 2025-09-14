@@ -11,6 +11,11 @@ import {
   CollectionJobListResponse,
   PostAnalyticsResponse,
   SubscriptionStatusResponse,
+  SubscriptionTiersResponse,
+  CheckoutRequest,
+  CheckoutResponse,
+  UpgradeSubscriptionRequest,
+  UsageAnalyticsResponse,
   SentimentAnalysisResponse,
   BatchSentimentAnalysisResponse,
   DataSummary,
@@ -493,13 +498,62 @@ export class TrenditAPI {
     return requestPromise;
   }
 
-  // Subscription (with caching)
+  // Billing & Subscription Management (with caching)
   async getSubscriptionStatus(): Promise<SubscriptionStatusResponse> {
     return this.cachedGet<SubscriptionStatusResponse>(
       '/api/billing/subscription/status',
       'subscription_status',
       300000 // 5 minutes cache
     );
+  }
+
+  async getBillingTiers(): Promise<SubscriptionTiersResponse> {
+    return this.cachedGet<SubscriptionTiersResponse>(
+      '/api/billing/tiers',
+      'billing_tiers',
+      3600000 // 1 hour cache - pricing doesn't change often
+    );
+  }
+
+  async createCheckout(request: CheckoutRequest): Promise<CheckoutResponse> {
+    const response: AxiosResponse<CheckoutResponse> = await this.client.post(
+      '/api/billing/checkout/create',
+      request
+    );
+    // Clear subscription cache after successful checkout creation
+    this.requestCache.delete('subscription_status');
+    return response.data;
+  }
+
+  async upgradeSubscription(request: UpgradeSubscriptionRequest): Promise<any> {
+    const response: AxiosResponse<any> = await this.client.post(
+      '/api/billing/subscription/upgrade',
+      request
+    );
+    // Clear subscription cache after upgrade
+    this.requestCache.delete('subscription_status');
+    return response.data;
+  }
+
+  async cancelSubscription(): Promise<any> {
+    const response: AxiosResponse<any> = await this.client.post(
+      '/api/billing/subscription/cancel'
+    );
+    // Clear subscription cache after cancellation
+    this.requestCache.delete('subscription_status');
+    return response.data;
+  }
+
+  async getUsageAnalytics(days: number = 30): Promise<UsageAnalyticsResponse> {
+    const response: AxiosResponse<UsageAnalyticsResponse> = await this.client.get(
+      `/api/billing/usage/analytics?days=${days}`
+    );
+    return response.data;
+  }
+
+  async getBillingHealthCheck(): Promise<{status: string, paddle_configured: boolean, timestamp: string}> {
+    const response = await this.client.get('/api/billing/health');
+    return response.data;
   }
 
   // Sentiment Analysis

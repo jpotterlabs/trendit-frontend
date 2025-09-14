@@ -173,6 +173,72 @@ export interface SubscriptionStatusResponse {
   customer_portal_url?: string;
 }
 
+// Billing & Checkout Types
+export interface SubscriptionTiersResponse {
+  tiers: {
+    [key: string]: {
+      name: string;
+      price: number;
+      currency: string;
+      interval: string;
+      features: string[];
+      limits: {
+        api_calls_per_month: number;
+        exports_per_month: number;
+        sentiment_analysis_per_month: number;
+        data_retention_days: number;
+      };
+    };
+  };
+}
+
+export interface CheckoutRequest {
+  tier: SubscriptionTier;
+  trial_days?: number;
+  success_url?: string;
+  cancel_url?: string;
+}
+
+export interface CheckoutResponse {
+  checkout_url: string;
+  tier: string;
+  price: number;
+  trial_days?: number;
+  expires_at?: string;
+}
+
+export interface UpgradeSubscriptionRequest {
+  new_tier: SubscriptionTier;
+}
+
+export interface UsageAnalyticsResponse {
+  billing_period: {
+    start: string;
+    end: string;
+  };
+  daily_usage: {
+    [date: string]: {
+      [usage_type: string]: number;
+    };
+  };
+  endpoint_usage: {
+    [endpoint: string]: number;
+  };
+  total_usage_this_period: {
+    [usage_type: string]: number;
+  };
+  usage_trends: {
+    average_daily_usage: {
+      [usage_type: string]: number;
+    };
+    projected_monthly_usage: {
+      [usage_type: string]: number;
+    };
+    busiest_day?: string;
+    most_used_endpoint?: string;
+  };
+}
+
 // Sentiment Analysis Types
 export interface SentimentAnalysisResponse {
   text: string;
