@@ -1,6 +1,6 @@
 'use client';
 
-import { DashboardLayout } from '@/components/dashboard/layout';
+import { PublicLayout } from '@/components/layout/public-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, ExternalLink, Clock, Mail, Eye } from 'lucide-react';
@@ -37,7 +37,7 @@ export function PrivacyContent() {
   };
 
   return (
-    <DashboardLayout
+    <PublicLayout
       title="Privacy Policy"
       description="How we collect, use, and protect your personal information"
     >
@@ -214,6 +214,6 @@ export function PrivacyContent() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </PublicLayout>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { DashboardLayout } from '@/components/dashboard/layout';
+import { PublicLayout } from '@/components/layout/public-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollText, ExternalLink, Clock } from 'lucide-react';
@@ -38,7 +38,7 @@ export function TermsContent() {
   };
 
   return (
-    <DashboardLayout
+    <PublicLayout
       title="Terms of Service"
       description="Terms and conditions governing the use of Trendit services"
     >
@@ -134,8 +134,73 @@ export function TermsContent() {
                   </div>
                 </section>
 
-                {/* Additional sections would continue here with proper escaping */}
-                {/* For brevity, I'll include key sections and indicate where others would go */}
+                {/* Section 7: Subscription and Billing */}
+                <section id="subscription-billing">
+                  <h2 className="text-2xl font-bold mb-4 text-gradient-data">7. Subscription and Billing</h2>
+                  <div className="prose prose-gray max-w-none dark:prose-invert space-y-4">
+                    <h3 className="text-lg font-semibold">7.1 Subscription Plans</h3>
+                    <p>
+                      Trendit offers various subscription tiers with different features and usage limits. Subscription fees are billed in advance on a monthly or annual basis, as selected during signup.
+                    </p>
+
+                    <h3 className="text-lg font-semibold">7.2 Payment Processing</h3>
+                    <p>
+                      Payments are processed securely through Paddle.com. By subscribing, you authorize us to charge your selected payment method for the subscription fees and any applicable taxes.
+                    </p>
+
+                    <h3 className="text-lg font-semibold">7.3 Auto-Renewal</h3>
+                    <p>
+                      Subscriptions automatically renew at the end of each billing period unless canceled before the renewal date. You will be charged the then-current subscription fee for the next billing period.
+                    </p>
+
+                    <h3 className="text-lg font-semibold">7.4 Cancellation Policy</h3>
+                    <p>
+                      You may cancel your subscription at any time through your account dashboard or by contacting support. Cancellation takes effect at the end of your current billing period. You will retain access to paid features until the end of your billing period.
+                    </p>
+
+                    <h3 className="text-lg font-semibold">7.5 Refund Policy</h3>
+                    <p>
+                      <strong>30-Day Money-Back Guarantee:</strong> New subscribers may request a full refund within 30 days of their initial purchase. Refunds for subsequent billing periods are not provided, except at our sole discretion for exceptional circumstances.
+                    </p>
+                    <p>
+                      <strong>Refund Process:</strong> To request a refund, contact our support team at billing@potterlabs.xyz within the eligible period. Refunds are processed through the original payment method within 5-10 business days.
+                    </p>
+                    <p>
+                      <strong>Usage-Based Refunds:</strong> Partial refunds may be considered for unused service periods due to technical issues or service interruptions on our end.
+                    </p>
+
+                    <h3 className="text-lg font-semibold">7.6 Fee Changes</h3>
+                    <p>
+                      We may modify subscription fees with 30 days' advance notice. Fee changes apply to new subscriptions and renewals after the notice period. Current subscribers will be notified via email.
+                    </p>
+
+                    <h3 className="text-lg font-semibold">7.7 Failed Payments</h3>
+                    <p>
+                      If a payment fails, we will attempt to collect payment for up to 7 days. If payment cannot be collected, your subscription will be suspended until payment is successful. Your account and data will be retained for 30 days to allow for payment resolution.
+                    </p>
+                  </div>
+                </section>
+
+                {/* Section 14: Account Termination */}
+                <section id="termination">
+                  <h2 className="text-2xl font-bold mb-4 text-gradient-data">14. Account Termination</h2>
+                  <div className="prose prose-gray max-w-none dark:prose-invert space-y-4">
+                    <h3 className="text-lg font-semibold">14.1 Termination by User</h3>
+                    <p>
+                      You may terminate your account at any time by canceling your subscription and contacting support. Upon termination, your access to the service will end, but you may retain access through the end of your current billing period.
+                    </p>
+
+                    <h3 className="text-lg font-semibold">14.2 Termination by Us</h3>
+                    <p>
+                      We may suspend or terminate your account immediately if you violate these Terms, engage in prohibited activities, or if your account remains unpaid for more than 30 days.
+                    </p>
+
+                    <h3 className="text-lg font-semibold">14.3 Data Retention</h3>
+                    <p>
+                      After account termination, we may retain your data for up to 90 days for recovery purposes. After this period, your data will be permanently deleted, except as required for legal compliance.
+                    </p>
+                  </div>
+                </section>
 
                 {/* Section 17: Contact */}
                 <section id="contact">
@@ -178,6 +243,6 @@ export function TermsContent() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </PublicLayout>
   );
 }
