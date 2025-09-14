@@ -70,12 +70,22 @@ export default function BillingPage() {
         
         // Fetch available tiers from API
         const tiersResponse = await api.getBillingTiers();
-        setTiers(tiersResponse.tiers);
+
+        // Transform API response to match our interface by adding key field
+        const tiersWithKeys: Record<string, SubscriptionTierInfo> = {};
+        Object.entries(tiersResponse.tiers).forEach(([tierKey, tierData]) => {
+          tiersWithKeys[tierKey] = {
+            key: tierKey,
+            ...tierData
+          };
+        });
+        setTiers(tiersWithKeys);
 
         // Fetch current subscription status using existing method
         const subscriptionStatus = await api.getSubscriptionStatus();
         setCurrentSubscription(subscriptionStatus);
       } catch (error) {
+        console.error('Failed to load billing data:', error);
         setError('Unable to load billing information. Please try again later.');
       } finally {
         setIsLoading(false);
@@ -106,6 +116,7 @@ export default function BillingPage() {
         setError('Unable to create checkout session. Please try again.');
       }
     } catch (error: any) {
+      console.error('Checkout creation failed:', error);
       setError('Failed to initiate upgrade. Please try again or contact support.');
     } finally {
       setUpgrading(null);
