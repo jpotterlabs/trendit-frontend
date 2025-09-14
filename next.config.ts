@@ -39,7 +39,7 @@ export default withSentryConfig(nextConfig, {
   // Configure source maps for better debugging while hiding them from bundles
   sourcemaps: {
     disable: false,  // Generate source maps for debugging
-    deleteFilesAfterUpload: true,  // Hide source maps from client bundles
+    deleteSourcemapsAfterUpload: true,  // Hide source maps from client bundles
   },
 
   // Automatically tree-shake Sentry logger statements to reduce bundle size
