@@ -234,7 +234,7 @@ export class TrenditAPI {
   // Collection Jobs
   async createJob(jobData: CollectionJobRequest): Promise<CollectionJobResponse> {
     const response: AxiosResponse<CollectionJobResponse> = await this.client.post(
-      '/api/datastore/jobs',
+      '/api/collect/jobs',
       jobData
     );
     return response.data;
@@ -242,7 +242,7 @@ export class TrenditAPI {
 
   async getJob(jobId: string): Promise<CollectionJobResponse> {
     const response: AxiosResponse<CollectionJobResponse> = await this.client.get(
-      `/api/datastore/jobs/${jobId}`
+      `/api/collect/jobs/${jobId}`
     );
     return response.data;
   }
@@ -256,31 +256,31 @@ export class TrenditAPI {
     const cacheKey = `jobs_list_${JSON.stringify(params || {})}`;
     
     return this.cachedGet<CollectionJobListResponse>(
-      '/api/datastore/jobs' + (params ? '?' + new URLSearchParams(params as any).toString() : ''),
+      '/api/collect/jobs' + (params ? '?' + new URLSearchParams(params as any).toString() : ''),
       cacheKey,
       30000 // 30 seconds cache for jobs list
     );
   }
 
   async cancelJob(jobId: string): Promise<void> {
-    await this.client.post(`/api/datastore/jobs/${jobId}/cancel`);
+    await this.client.post(`/api/collect/jobs/${jobId}/cancel`);
   }
 
   async deleteJob(jobId: string): Promise<void> {
-    await this.client.delete(`/api/datastore/jobs/${jobId}`);
+    await this.client.delete(`/api/collect/jobs/${jobId}`);
   }
 
   // Analytics
   async getJobAnalytics(jobId: string): Promise<PostAnalyticsResponse> {
     const response: AxiosResponse<PostAnalyticsResponse> = await this.client.get(
-      `/api/databrowser/analytics/${jobId}`
+      `/api/data/analytics/${jobId}`
     );
     return response.data;
   }
 
   async getDataSummary(): Promise<DataSummary> {
     return this.cachedGet<DataSummary>(
-      '/api/databrowser/summary',
+      '/api/data/summary',
       'data_summary',
       120000 // 2 minutes cache
     );
@@ -443,7 +443,7 @@ export class TrenditAPI {
         queryParams.append(key, String(value));
       }
     });
-    const response = await this.client.get(`/api/databrowser/posts/recent?${queryParams}`);
+    const response = await this.client.get(`/api/data/posts/recent?${queryParams}`);
     return response.data;
   }
 
@@ -458,7 +458,7 @@ export class TrenditAPI {
         queryParams.append(key, String(value));
       }
     });
-    const response = await this.client.get(`/api/databrowser/posts/top?${queryParams}`);
+    const response = await this.client.get(`/api/data/posts/top?${queryParams}`);
     return response.data;
   }
 
