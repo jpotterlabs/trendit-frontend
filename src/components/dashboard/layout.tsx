@@ -19,13 +19,17 @@ export function DashboardLayout({ children, title, description, headerActions }:
   const { isAuthenticated, token, loadSubscription } = useAuthStore();
 
   useEffect(() => {
+    console.log('DashboardLayout auth check:', { isAuthenticated, hasToken: !!token });
+
     if (!isAuthenticated && !token) {
+      console.log('Redirecting to login: not authenticated and no token');
       router.push('/auth/login');
       return;
     }
 
     // Load subscription data if authenticated
     if (isAuthenticated && token) {
+      console.log('Loading subscription data...');
       loadSubscription();
     }
   }, [isAuthenticated, token, router, loadSubscription]);

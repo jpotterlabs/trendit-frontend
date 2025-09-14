@@ -35,9 +35,12 @@ export default function CallbackPage() {
 
           console.log('Auth0 callback - User:', user);
           console.log('Auth0 callback - Access token received');
+          console.log('Auth0 callback - Calling loginWithAuth0...');
 
           // Send the access token to our backend
           await loginWithAuth0(accessToken);
+
+          console.log('Auth0 callback - loginWithAuth0 completed successfully');
 
           // Redirect to dashboard
           router.push('/dashboard');

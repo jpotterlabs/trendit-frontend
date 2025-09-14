@@ -47,7 +47,7 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
               <div className="shimmer-overlay">
                 <Button size="lg" className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-lg px-8 py-4 shadow-2xl hover-lift" asChild>
-                  <Link href="/auth/register">
+                  <Link href="/auth/login">
                     Get Started Free
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
@@ -226,7 +226,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <Button className="w-full py-3 text-lg" variant="outline" asChild>
-                  <Link href="/auth/register">Get Started</Link>
+                  <Link href="/auth/login">Get Started</Link>
                 </Button>
               </CardContent>
             </Card>
