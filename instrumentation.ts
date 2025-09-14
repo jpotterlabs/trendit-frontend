@@ -10,6 +10,14 @@ export async function register() {
 
 // Handle Next.js request errors for Sentry
 export async function onRequestError(err: unknown, request: { url?: string; method?: string }) {
-  const { captureRequestError } = await import("@sentry/nextjs");
-  captureRequestError(err, request);
+  const { captureException } = await import("@sentry/nextjs");
+  captureException(err, {
+    tags: {
+      source: 'nextjs_request_error',
+    },
+    extra: {
+      url: request.url,
+      method: request.method,
+    },
+  });
 }
