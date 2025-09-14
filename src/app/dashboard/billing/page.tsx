@@ -20,8 +20,9 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { api } from '@/lib/api/client';
+import { SubscriptionTier } from '@/lib/types';
 
-interface SubscriptionTier {
+interface SubscriptionTierInfo {
   key: string;
   name: string;
   price: number;
@@ -54,7 +55,7 @@ interface SubscriptionStatus {
 
 export default function BillingPage() {
   const { user } = useAuthStore();
-  const [tiers, setTiers] = useState<Record<string, SubscriptionTier>>({});
+  const [tiers, setTiers] = useState<Record<string, SubscriptionTierInfo>>({});
   const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<string | null>(null);
@@ -67,34 +68,24 @@ export default function BillingPage() {
       try {
         setError(null);
         
-        // Fetch available tiers (placeholder - need to implement getBillingTiers method)
-        // const tiers = await api.getBillingTiers();
-        // setTiers(tiers);
-        
-        // For now, use mock data
-        setTiers({
-          free: {
-            key: 'free',
-            name: 'Free',
-            price: 0,
-            currency: 'USD',
-            interval: 'month',
-            features: ['100 API calls/month', '10 exports/month', 'Basic support']
-          },
-          pro: {
-            key: 'pro',
-            name: 'Pro',
-            price: 29,
-            currency: 'USD',
-            interval: 'month',
-            features: ['10,000 API calls/month', '100 exports/month', 'Priority support', 'Advanced analytics']
-          }
+        // Fetch available tiers from API
+        const tiersResponse = await api.getBillingTiers();
+
+        // Transform API response to match our interface by adding key field
+        const tiersWithKeys: Record<string, SubscriptionTierInfo> = {};
+        Object.entries(tiersResponse.tiers).forEach(([tierKey, tierData]) => {
+          tiersWithKeys[tierKey] = {
+            key: tierKey,
+            ...tierData
+          };
         });
+        setTiers(tiersWithKeys);
 
         // Fetch current subscription status using existing method
         const subscriptionStatus = await api.getSubscriptionStatus();
         setCurrentSubscription(subscriptionStatus);
       } catch (error) {
+        console.error('Failed to load billing data:', error);
         setError('Unable to load billing information. Please try again later.');
       } finally {
         setIsLoading(false);
@@ -111,23 +102,21 @@ export default function BillingPage() {
     setError(null);
     
     try {
-      // Placeholder for checkout creation - need to implement createCheckout method
-      // const response = await api.createCheckout({
-      //   tier: tierKey,
-      //   success_url: `${window.location.origin}/dashboard/billing?success=true`,
-      //   cancel_url: `${window.location.origin}/dashboard/billing?canceled=true`
-      // });
-      
-      // For now, show upgrade message
-      setError(`Checkout for ${tierKey} tier would be created here. Backend integration needed.`);
-      
-      // When backend is ready, uncomment this:
-      // if (response.data.checkout_url) {
-      //   window.location.href = response.data.checkout_url;
-      // } else {
-      //   setError('Unable to create checkout session. Please try again.');
-      // }
-    } catch (error) {
+      // Create checkout session with Paddle
+      const response = await api.createCheckout({
+        tier: tierKey as SubscriptionTier,
+        success_url: `${window.location.origin}/dashboard/billing?success=true`,
+        cancel_url: `${window.location.origin}/dashboard/billing?canceled=true`
+      });
+
+      if (response.checkout_url) {
+        // Redirect to Paddle checkout
+        window.location.href = response.checkout_url;
+      } else {
+        setError('Unable to create checkout session. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Checkout creation failed:', error);
       setError('Failed to initiate upgrade. Please try again or contact support.');
     } finally {
       setUpgrading(null);
