@@ -1,8 +1,8 @@
-// This file was causing duplicate Sentry initialization conflicts.
-// Client-side Sentry configuration is now handled in sentry.client.config.ts
+// Client-side instrumentation utilities for Sentry.
+// Main client-side Sentry configuration is handled in sentry.client.config.ts
 //
-// Note: This file exists because of Next.js instrumentation setup but we're
-// using the standard Sentry Next.js configuration approach instead.
+// This file provides instrumentation helpers for router transitions and other
+// client-side events that need to be captured by Sentry.
 
 import * as Sentry from "@sentry/nextjs";
 

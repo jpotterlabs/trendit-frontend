@@ -3,7 +3,13 @@ import * as Sentry from "@sentry/nextjs";
 // Only initialize Sentry if DSN is properly configured
 const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
-if (sentryDsn && sentryDsn !== "https://your-sentry-dsn@sentry.io/project-id") {
+// Check for common placeholder patterns
+const isPlaceholder = !sentryDsn ||
+  sentryDsn.includes('your-sentry-dsn') ||
+  sentryDsn.includes('example') ||
+  sentryDsn === 'YOUR_DSN_HERE';
+
+if (sentryDsn && !isPlaceholder) {
   Sentry.init({
     dsn: sentryDsn,
 

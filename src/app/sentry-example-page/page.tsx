@@ -40,8 +40,8 @@ export default function Page() {
         </h1>
 
         <p className="description">
-          Click the button below, and view the sample error on the Sentry <a target="_blank" href="https://jason-potter.sentry.io/issues/?project=4510021713264640">Issues Page</a>.
-          For more details about setting up Sentry, <a target="_blank"
+          Click the button below, and view the sample error on the Sentry <a target="_blank" rel="noopener" href="https://jason-potter.sentry.io/issues/?project=4510021713264640">Issues Page</a>.
+          For more details about setting up Sentry, <a target="_blank" rel="noopener"
            href="https://docs.sentry.io/platforms/javascript/guides/nextjs/">read our docs</a>.
         </p>
 
@@ -148,14 +148,14 @@ export default function Page() {
           }
 
           &:disabled {
-	            cursor: not-allowed;
-	            opacity: 0.6;
-	
-	            & > span {
-	              transform: translateY(0);
-	              border: none
-	            }
-	          }
+            cursor: not-allowed;
+            opacity: 0.6;
+
+            & > span {
+              transform: translateY(0);
+              border: none;
+            }
+          }
         }
 
         .description {
