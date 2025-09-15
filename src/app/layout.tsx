@@ -19,6 +19,11 @@ const geistMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Trendit - Reddit Analytics Platform',
   description: 'Comprehensive Reddit data collection and analysis platform',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
