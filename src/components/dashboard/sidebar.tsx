@@ -39,66 +39,84 @@ import {
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-const navigation = [
-  { 
-    name: 'Overview', 
-    href: '/dashboard', 
+// Define subscription tiers
+type SubscriptionTier = 'free' | 'pro' | 'premium';
+
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: any;
+  description: string;
+  gradient: string;
+  requiredTier?: SubscriptionTier;
+  tierLabel?: string;
+}
+
+const navigation: NavigationItem[] = [
+  {
+    name: 'Overview',
+    href: '/dashboard',
     icon: Home,
     description: 'Dashboard insights',
     gradient: 'from-sapphire-500 to-violet-500'
   },
-  { 
-    name: 'Collection Jobs', 
-    href: '/dashboard/jobs', 
-    icon: Database,
-    description: 'Data collection tasks',
-    gradient: 'from-emerald-500 to-teal-500'
-  },
-  { 
-    name: 'Scenarios', 
-    href: '/dashboard/scenarios', 
+  {
+    name: 'Scenarios',
+    href: '/dashboard/scenarios',
     icon: Layers,
-    description: 'Analysis scenarios',
+    description: 'Pre-built Reddit analysis scenarios',
     gradient: 'from-violet-500 to-purple-500'
+    // Available to all tiers (FREE+)
   },
-  { 
-    name: 'Data Browser', 
-    href: '/dashboard/data', 
-    icon: Filter,
-    description: 'Explore datasets',
-    gradient: 'from-amber-500 to-orange-500'
-  },
-  { 
-    name: 'Query Builder', 
-    href: '/dashboard/query', 
+  {
+    name: 'Query Builder',
+    href: '/dashboard/query',
     icon: Search,
-    description: 'Custom queries',
-    gradient: 'from-rose-500 to-pink-500'
+    description: 'Live Reddit searches and ad-hoc queries',
+    gradient: 'from-rose-500 to-pink-500',
+    requiredTier: 'pro',
+    tierLabel: 'PRO+'
   },
-  { 
-    name: 'Analytics', 
-    href: '/dashboard/analytics', 
+  {
+    name: 'Analytics',
+    href: '/dashboard/analytics',
     icon: TrendingUp,
-    description: 'Data insights',
-    gradient: 'from-cyan-500 to-blue-500'
+    description: 'Data insights and trend analysis',
+    gradient: 'from-cyan-500 to-blue-500',
+    requiredTier: 'pro',
+    tierLabel: 'PRO+'
   },
-  { 
-    name: 'Export Center', 
-    href: '/dashboard/export', 
+  {
+    name: 'Collection Jobs',
+    href: '/dashboard/jobs',
+    icon: Database,
+    description: 'Persistent data collection tasks',
+    gradient: 'from-emerald-500 to-teal-500',
+    requiredTier: 'premium',
+    tierLabel: 'PREMIUM'
+  },
+  {
+    name: 'Data Browser',
+    href: '/dashboard/data',
+    icon: Filter,
+    description: 'Explore saved datasets and collections',
+    gradient: 'from-amber-500 to-orange-500',
+    requiredTier: 'premium',
+    tierLabel: 'PREMIUM'
+  },
+  {
+    name: 'Export Center',
+    href: '/dashboard/export',
     icon: Download,
-    description: 'Data export tools',
-    gradient: 'from-indigo-500 to-purple-500'
+    description: 'Export data in multiple formats',
+    gradient: 'from-indigo-500 to-purple-500',
+    requiredTier: 'premium',
+    tierLabel: 'PREMIUM'
   },
-  { 
-    name: 'AI Insights', 
-    href: '/dashboard/sentiment', 
-    icon: Brain,
-    description: 'Sentiment analysis',
-    gradient: 'from-emerald-500 to-cyan-500'
-  },
-  { 
-    name: 'Billing', 
-    href: '/dashboard/billing', 
+  // Sentiment analysis removed completely
+  {
+    name: 'Billing',
+    href: '/dashboard/billing',
     icon: CreditCard,
     description: 'Subscription & usage',
     gradient: 'from-violet-500 to-rose-500'
